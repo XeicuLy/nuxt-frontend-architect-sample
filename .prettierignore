@@ -7,6 +7,7 @@ dist
 *.tgz
 temp
 coverage
+.nuxt
 
 # Node dependencies
 node_modules
