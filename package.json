@@ -10,15 +10,21 @@
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.2.0",
     "@nuxt/eslint": "1.9.0",
     "@nuxt/test-utils": "3.19.2",
+    "@types/eslint-plugin-tailwindcss": "3.17.0",
     "eslint": "9.33.0",
+    "eslint-plugin-tailwindcss": "3.18.2",
+    "globals": "16.3.0",
     "nuxt": "4.0.3",
+    "prettier": "3.6.2",
     "vue": "3.5.18",
-    "vue-router": "4.5.1"
+    "vue-router": "4.5.1",
+    "vue-tsc": "3.0.6"
   },
   "volta": {
     "node": "24.6.0",
-    "pnpm": "10.14.0"
+    "pnpm": "10.15.0"
   }
 }
