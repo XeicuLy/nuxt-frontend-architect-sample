@@ -27,7 +27,6 @@ logs
 !.env.example
 
 # Biome
-**/*.css
 **/*.js
 **/*.ts
 **/*.cjs
