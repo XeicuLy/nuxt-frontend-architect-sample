@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 
 const app = new Hono().basePath('/api').get('/health', (c) => {
-  return c.text(`This is Nuxt Frontend Architect Sample API Server!`);
+  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 export type HonoApp = typeof app;
