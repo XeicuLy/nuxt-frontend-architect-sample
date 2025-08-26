@@ -5,6 +5,6 @@ const greetingMessage = 'Hello, Frontend Architect Sample!';
 </script>
 <template>
   <section :id="indexPageId">
-    <h1>{{ greetingMessage }}</h1>
+    <h1 class="font-bold">{{ greetingMessage }}</h1>
   </section>
 </template>
