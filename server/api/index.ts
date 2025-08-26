@@ -1,10 +1,12 @@
-import { Hono } from 'hono';
+import { OpenAPIHono } from '@hono/zod-openapi';
+import { healthHandler } from './routes/health';
 
-const app = new Hono().basePath('/api').get('/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+const app = new OpenAPIHono().basePath('/api');
 
-export type HonoApp = typeof app;
+/**
+ * APIのエンドポイント追加
+ */
+healthHandler(app);
 
 export default defineEventHandler(async (event) => {
   const webReq = toWebRequest(event);
