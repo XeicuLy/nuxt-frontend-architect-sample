@@ -18,7 +18,8 @@
     "eslint:fix": "eslint . --fix",
     "typecheck": "nuxi typecheck .",
     "lint": "pnpm eslint && pnpm biome && pnpm prettier && pnpm typecheck",
-    "lint:fix": "pnpm eslint:fix && pnpm biome:fix && pnpm prettier:fix && pnpm typecheck"
+    "lint:fix": "pnpm eslint:fix && pnpm biome:fix && pnpm prettier:fix && pnpm typecheck",
+    "generate-types": "npx @hey-api/openapi-ts && pnpm biome:fix"
   },
   "dependencies": {
     "@hono/swagger-ui": "0.5.2",
