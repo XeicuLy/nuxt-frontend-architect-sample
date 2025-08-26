@@ -1,10 +1,25 @@
 <script setup lang="ts">
-const indexPageId = useId();
+import Index from '@/components/index/Index.vue';
+import { useRenderEnvironment } from '@/composables/common/useRenderEnvironment';
+import { useHealth } from '~/composables/useHealth';
 
-const greetingMessage = 'Hello, Frontend Architect Sample!';
+const indexPageId = useId();
+const { isInitialClientRender } = useRenderEnvironment();
+const { getHealthData } = useHealth();
+
+const handleInit = async () => {
+  if (isInitialClientRender.value) {
+    return;
+  }
+
+  await getHealthData();
+};
+
+await handleInit();
 </script>
+
 <template>
   <section :id="indexPageId">
-    <h1 class="font-bold">{{ greetingMessage }}</h1>
+    <Index />
   </section>
 </template>
