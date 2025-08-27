@@ -1,6 +1,12 @@
+<script setup lang="ts">
+const nuxtAppId = useId();
+</script>
 <template>
-  <div>
+  <div :id="nuxtAppId">
     <NuxtRouteAnnouncer />
-    <NuxtWelcome />
+    <NuxtLoadingIndicator />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </div>
 </template>

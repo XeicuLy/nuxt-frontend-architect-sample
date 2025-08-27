@@ -73,3 +73,13 @@ bun run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## MCP Setup
+
+```bash
+claude mcp add playwright npx @playwright/mcp@latest
+
+claude mcp add context7 -- npx --yes @upstash/context7-mcp
+
+claude mcp add serena -- uvx --from git+https://github.com/oraios/serena serena-mcp-server --context ide-assistant --project $(pwd)
+```

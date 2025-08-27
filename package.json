@@ -18,18 +18,31 @@
     "eslint:fix": "eslint . --fix",
     "typecheck": "nuxi typecheck .",
     "lint": "pnpm eslint && pnpm biome && pnpm prettier && pnpm typecheck",
-    "lint:fix": "pnpm eslint:fix && pnpm biome:fix && pnpm prettier:fix && pnpm typecheck"
+    "lint:fix": "pnpm eslint:fix && pnpm biome:fix && pnpm prettier:fix && pnpm typecheck",
+    "generate-types": "npx @hey-api/openapi-ts && pnpm biome:fix"
+  },
+  "dependencies": {
+    "@hono/swagger-ui": "0.5.2",
+    "@hono/zod-openapi": "1.1.0",
+    "@hono/zod-validator": "0.7.2",
+    "consola": "3.4.2",
+    "hono": "4.9.4",
+    "zod": "4.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
+    "@hey-api/openapi-ts": "0.81.0",
     "@nuxt/eslint": "1.9.0",
     "@nuxt/test-utils": "3.19.2",
     "@nuxtjs/tailwindcss": "6.14.0",
+    "@pinia/nuxt": "0.11.2",
     "@types/eslint-plugin-tailwindcss": "3.17.0",
     "eslint": "9.33.0",
     "eslint-plugin-tailwindcss": "3.18.2",
+    "eslint-plugin-vuejs-accessibility": "2.4.1",
     "globals": "16.3.0",
     "nuxt": "4.0.3",
+    "pinia": "3.0.3",
     "prettier": "3.6.2",
     "tailwindcss": "^3.4.17",
     "typescript": "5.9.2",
