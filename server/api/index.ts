@@ -9,7 +9,7 @@ const app = new OpenAPIHono().basePath('/api');
  */
 healthHandler(app);
 
-app.doc('/openapi.json', {
+app.doc('/openapi.yaml', {
   openapi: '3.0.0',
   info: {
     version: '1.0.0',
@@ -17,7 +17,7 @@ app.doc('/openapi.json', {
   },
 });
 
-app.get('/swagger', swaggerUI({ url: '/api/openapi.json' }));
+app.get('/swagger', swaggerUI({ url: '/api/openapi.yaml' }));
 
 export default defineEventHandler(async (event) => {
   const webReq = toWebRequest(event);
