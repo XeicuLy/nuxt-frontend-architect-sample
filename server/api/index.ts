@@ -12,17 +12,16 @@ const app = new OpenAPIHono().basePath('/api');
  */
 healthHandler(app);
 
-app.doc('/openapi.yaml', {
-  openapi: '3.0.0',
-  info: {
-    version: '1.0.0',
-    title: 'Nuxt Frontend Architect Sample API',
-  },
-});
-
-app.get('/swagger', swaggerUI({ url: '/api/openapi.yaml' }));
-
 if (isDevelopment) {
+  app.doc('/openapi.yaml', {
+    openapi: '3.0.0',
+    info: {
+      version: '1.0.0',
+      title: 'Nuxt Frontend Architect Sample API',
+    },
+  });
+  app.get('/swagger', swaggerUI({ url: '/api/openapi.yaml' }));
+
   consola.info('API Server URLs:');
   consola.info('  Health Check: http://localhost:3000/api/health');
   consola.info('  Swagger UI: http://localhost:3000/api/swagger');
