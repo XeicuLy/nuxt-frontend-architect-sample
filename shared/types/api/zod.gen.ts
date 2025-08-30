@@ -13,5 +13,5 @@ export const zGetApiHealthData = z.object({
  */
 export const zGetApiHealthResponse = z.object({
   status: z.string(),
-  timestamp: z.iso.date(),
+  timestamp: z.iso.datetime(),
 });

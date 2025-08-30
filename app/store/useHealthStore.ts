@@ -14,14 +14,14 @@ export const useHealthStore = defineStore('health', () => {
   const healthTimestamp = computed(() => state.healthData?.timestamp);
 
   const getHealthData = async () => {
-    const { getHealthApi } = useHealthService();
-    const response = await getHealthApi();
+    const { healthQuery } = useHealthService();
+    const { data: healthData } = await healthQuery.refetch();
 
-    if (!response) {
+    if (!healthData) {
       return;
     }
 
-    state.healthData = response;
+    state.healthData = healthData;
   };
 
   return {
