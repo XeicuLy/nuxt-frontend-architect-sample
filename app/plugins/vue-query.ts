@@ -29,13 +29,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   nuxtApp.vueApp.use(VueQueryPlugin, options);
 
-  if (isProcessClient.value) {
+  if (isProcessServer.value) {
     nuxtApp.hooks.hook('app:rendered', () => {
       vueQueryState.value = dehydrate(queryClient);
     });
   }
 
-  if (isProcessServer.value) {
+  if (isProcessClient.value) {
     nuxtApp.hooks.hook('app:created', () => {
       hydrate(queryClient, vueQueryState.value);
     });
