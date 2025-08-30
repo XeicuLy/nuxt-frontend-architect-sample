@@ -16,6 +16,7 @@
     "prettier:ci": "prettier --check --log-level warn .",
     "eslint": "eslint .",
     "eslint:fix": "eslint . --fix",
+    "eslint:ci": "eslint . --max-warnings 0",
     "typecheck": "nuxi typecheck .",
     "lint": "pnpm eslint && pnpm biome && pnpm prettier && pnpm typecheck",
     "lint:fix": "pnpm eslint:fix && pnpm biome:fix && pnpm prettier:fix && pnpm typecheck",
@@ -51,7 +52,7 @@
     "vue-tsc": "3.0.6"
   },
   "volta": {
-    "node": "24.6.0",
+    "node": "24.7.0",
     "pnpm": "10.15.0"
   }
 }
