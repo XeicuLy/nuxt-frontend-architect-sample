@@ -1,16 +1,17 @@
-# Nuxt 4 フロントエンドアーキテクト サンプル
+# Nuxt 4 + Hono + TanStack Query フルスタック サンプル
 
 ## 📖 プロジェクト概要
 
-このプロジェクトは、**Nuxt 4** を使用したモダンなフルスタックWeb開発のサンプルプロジェクトです。初学者がNuxt 4の基本的な使い方から、プロダクションレベルの開発手法まで学べる構成になっています。
+このプロジェクトは、**Nuxt 4**、**Hono**、**TanStack Query** を組み合わせたモダンなフルスタックWeb開発のサンプルプロジェクトです。初学者から上級者まで、最新の技術スタックを使ったプロダクションレベルの開発手法を学べる構成になっています。
 
 ### 🎯 このプロジェクトで学べること
 
-- **Nuxt 4** での基本的なWebアプリケーション開発
-- **TypeScript** を使った型安全な開発
+- **Nuxt 4** でのフルスタックWebアプリケーション開発
+- **Hono** による高性能なAPI開発とOpenAPI統合
+- **TanStack Query** を使った効率的なデータフェッチング・キャッシング
+- **TypeScript** による完全な型安全性の実現
 - **API-First開発** の実践（OpenAPI + Zod）
-- **モダンな開発ツール** の導入と使い方
-- **フルスタック** での開発アプローチ
+- **モダンな開発ツールチェーン** の活用
 
 ### 🛠️ 技術スタック
 
@@ -18,15 +19,16 @@
 
 - **[Nuxt 4](https://nuxt.com/)** - フルスタックVue.jsフレームワーク
 - **[Vue 3](https://vuejs.org/)** - プログレッシブJavaScriptフレームワーク
+- **[TanStack Query](https://tanstack.com/query)** - 強力なデータ同期・キャッシングライブラリ
 - **[TypeScript](https://www.typescriptlang.org/)** - 型安全な開発
 - **[Tailwind CSS](https://tailwindcss.com/)** - ユーティリティファーストCSSフレームワーク
 - **[Pinia](https://pinia.vuejs.org/)** - Vue 3向け状態管理ライブラリ
 
 #### バックエンド
 
-- **[Hono](https://hono.dev/)** - 高速軽量なWebフレームワーク
+- **[Hono](https://hono.dev/)** - エッジランタイム対応高性能Webフレームワーク
 - **[Zod](https://zod.dev/)** - TypeScript向けスキーマ検証ライブラリ
-- **OpenAPI** - API仕様書の自動生成
+- **[OpenAPI](https://www.openapis.org/)** - API仕様書の自動生成とSwagger UI
 
 #### 開発ツール
 
@@ -40,6 +42,8 @@
 - **モノレポ構成**: フロントエンド、バックエンド、共有型定義を統合管理
 - **API-First開発**: OpenAPI仕様からTypeScript型定義を自動生成
 - **型安全な通信**: フロントエンド⇔バックエンド間の完全な型安全性
+- **効率的なデータ管理**: TanStack QueryによるSSR対応キャッシング・同期機能
+- **高性能API**: Honoによるエッジランタイム対応の軽量で高速なAPI
 - **コンポーザブル設計**: 再利用可能なロジックの分離
 - **モダンツールチェーン**: 開発効率を最大化する最新ツール
 
@@ -149,15 +153,17 @@ pnpm dev
 pnpm generate-types
 ```
 
-## 🔧 API型定義とZodスキーマの使い方
+## 🔧 API型定義・Zodスキーマ・TanStack Queryの使い方
 
-このプロジェクトでは、[openapi-ts](https://github.com/hey-api/openapi-ts)を使用してAPIの型定義とZodスキーマを自動生成しています。
+このプロジェクトでは、[openapi-ts](https://github.com/hey-api/openapi-ts)による型定義自動生成、Zodスキーマ検証、TanStack Queryによる効率的なデータフェッチングを統合的に活用しています。
 
 ### 概要
 
-- APIスキーマから TypeScript の型定義と Zod スキーマを自動生成
+- **APIスキーマから TypeScript の型定義と Zod スキーマを自動生成**
+- **TanStack Query によるキャッシング・データ同期**
 - 生成されたファイルは `shared/types/api/` ディレクトリに配置
 - フロントエンドでの API レスポンスの型安全性とランタイムバリデーションを提供
+- **SSR/SSG 対応のデータハイドレーション**
 
 ### 生成されるファイル
 
@@ -208,7 +214,50 @@ export const useHealthServiceWithValidation = () => {
 };
 ```
 
-#### 3. セーフパース（エラーハンドリング付き）
+#### 3. TanStack Query を使ったリアクティブなデータフェッチ（推奨）
+
+```typescript
+// services/useHealthService.ts
+import { useQuery } from '@tanstack/vue-query';
+import { type GetApiHealthResponse, zGetApiHealthResponse } from '#shared/types/api';
+
+export const useHealthService = () => {
+  const getHealthApi = async (): Promise<GetApiHealthResponse> => {
+    const response = await $fetch<GetApiHealthResponse>('/api/health');
+    return zGetApiHealthResponse.parse(response); // Zodでランタイム検証
+  };
+
+  const healthQuery = useQuery({
+    queryKey: ['health'],
+    queryFn: getHealthApi,
+  });
+
+  return {
+    healthQuery, // { data, error, isLoading, refetch, ... }
+  };
+};
+```
+
+```vue
+<!-- pages/index.vue -->
+<template>
+  <div>
+    <div v-if="healthQuery.isLoading.value">読み込み中...</div>
+    <div v-else-if="healthQuery.error.value">エラー: {{ healthQuery.error.value }}</div>
+    <div v-else>
+      <h2>API Status: {{ healthQuery.data.value?.status }}</h2>
+      <p>Timestamp: {{ healthQuery.data.value?.timestamp }}</p>
+      <button @click="healthQuery.refetch()">再取得</button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+const { healthQuery } = useHealthService();
+</script>
+```
+
+#### 4. セーフパース（エラーハンドリング付き）
 
 ```typescript
 import { zGetApiHealthResponse } from '#shared/types/api';
@@ -223,11 +272,40 @@ if (result.success) {
 }
 ```
 
+### TanStack Query の設定
+
+プロジェクトでは `app/plugins/vue-query.ts` で TanStack Query を設定しています：
+
+```typescript
+// app/plugins/vue-query.ts
+import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5分間キャッシュ
+      gcTime: 1000 * 60 * 30, // 30分間メモリに保持
+      refetchOnWindowFocus: false,
+      refetchOnMount: true,
+      retry: 1,
+    },
+  },
+});
+```
+
+**主な特徴：**
+
+- **SSR対応**: サーバー側でフェッチしたデータをクライアント側でハイドレーション
+- **自動キャッシング**: 5分間のデータキャッシュで効率的なデータ取得
+- **バックグラウンド更新**: データの自動同期とリフレッシュ
+
 ### スキーマの再生成
 
 APIスキーマが更新された場合は、以下のコマンドで型定義を再生成できます：
 
 ```bash
+pnpm dev
+# 別ターミナルで実行
 pnpm generate-types
 ```
 
@@ -399,11 +477,24 @@ pnpm prettier:fix
 
 ## 📚 参考リンク
 
+### フレームワーク・ライブラリ
+
 - [Nuxt 4 公式ドキュメント](https://nuxt.com/docs)
+- [Hono 公式ドキュメント](https://hono.dev/)
+- [TanStack Query 公式ドキュメント](https://tanstack.com/query/latest/docs/framework/vue/overview)
 - [Vue 3 公式ドキュメント](https://vuejs.org/guide/)
 - [TypeScript 公式ドキュメント](https://www.typescriptlang.org/docs/)
+
+### スタイリング・状態管理
+
 - [Tailwind CSS 公式ドキュメント](https://tailwindcss.com/docs)
 - [Pinia 公式ドキュメント](https://pinia.vuejs.org/)
+
+### API・スキーマ
+
+- [Zod 公式ドキュメント](https://zod.dev/)
+- [OpenAPI Specification](https://swagger.io/specification/)
+- [@hey-api/openapi-ts](https://github.com/hey-api/openapi-ts)
 
 ## 🤝 コントリビューション
 
