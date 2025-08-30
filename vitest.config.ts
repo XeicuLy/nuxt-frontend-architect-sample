@@ -1,12 +1,29 @@
-import { defineVitestConfig } from '@nuxt/test-utils/config';
+import { defineVitestProject } from '@nuxt/test-utils/config';
+import { defineConfig } from 'vitest/config';
 
-export default defineVitestConfig({
+export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
     reporters: ['verbose'],
     coverage: {
       reportsDirectory: '../logs/coverage',
     },
+    projects: [
+      {
+        test: {
+          name: 'unit',
+          include: ['**/*.{test,spec}.ts'],
+          exclude: ['**/*.nuxt.{test,spec}.ts'],
+          environment: 'node',
+        },
+      },
+      await defineVitestProject({
+        test: {
+          name: 'nuxt',
+          include: ['**/*.nuxt.{test,spec}.ts'],
+          environment: 'nuxt',
+        },
+      }),
+    ],
   },
 });
