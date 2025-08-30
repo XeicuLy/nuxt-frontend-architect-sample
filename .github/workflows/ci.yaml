@@ -21,9 +21,6 @@ jobs:
   linter:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
