@@ -12,7 +12,7 @@ export const useHealthService = () => {
   };
 
   const healthQuery = useQuery({
-    queryKey: ['health'],
+    queryKey: ['health'] as const,
     queryFn: getHealthApi,
   });
 
