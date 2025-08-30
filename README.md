@@ -1,12 +1,12 @@
-# Nuxt 3 フロントエンドアーキテクト サンプル
+# Nuxt 4 フロントエンドアーキテクト サンプル
 
 ## 📖 プロジェクト概要
 
-このプロジェクトは、**Nuxt 3** を使用したモダンなフルスタックWeb開発のサンプルプロジェクトです。初学者がNuxt 3の基本的な使い方から、プロダクションレベルの開発手法まで学べる構成になっています。
+このプロジェクトは、**Nuxt 4** を使用したモダンなフルスタックWeb開発のサンプルプロジェクトです。初学者がNuxt 4の基本的な使い方から、プロダクションレベルの開発手法まで学べる構成になっています。
 
 ### 🎯 このプロジェクトで学べること
 
-- **Nuxt 3** での基本的なWebアプリケーション開発
+- **Nuxt 4** での基本的なWebアプリケーション開発
 - **TypeScript** を使った型安全な開発
 - **API-First開発** の実践（OpenAPI + Zod）
 - **モダンな開発ツール** の導入と使い方
@@ -16,7 +16,7 @@
 
 #### フロントエンド
 
-- **[Nuxt 3](https://nuxt.com/)** - フルスタックVue.jsフレームワーク
+- **[Nuxt 4](https://nuxt.com/)** - フルスタックVue.jsフレームワーク
 - **[Vue 3](https://vuejs.org/)** - プログレッシブJavaScriptフレームワーク
 - **[TypeScript](https://www.typescriptlang.org/)** - 型安全な開発
 - **[Tailwind CSS](https://tailwindcss.com/)** - ユーティリティファーストCSSフレームワーク
@@ -78,7 +78,7 @@
 4. **ブラウザでアクセス**
    - アプリケーション: http://localhost:3000
    - API ドキュメント: http://localhost:3000/api/swagger
-   - OpenAPI 仕様: http://localhost:3000/api/openapi.json
+   - OpenAPI 仕様: http://localhost:3000/api/openapi.yaml
 
 ## 📁 プロジェクト構造
 
@@ -96,7 +96,7 @@
 │       ├── routes/           # API ルートハンドラー
 │       └── schema/           # Zodスキーマ定義
 ├── shared/                   # 共有リソース
-│   └── types/api/            # 自動生成された型定義
+│   └── types/api/            # 自動生成された型定義とZodスキーマ
 └── public/                   # 静的ファイル
 ```
 
@@ -143,6 +143,8 @@ pnpm typecheck
 ### API型定義の生成
 
 ```bash
+# 開発環境を立ち上げる
+pnpm dev
 # OpenAPIからTypeScript型定義を生成
 pnpm generate-types
 ```
@@ -229,7 +231,7 @@ APIスキーマが更新された場合は、以下のコマンドで型定義�
 pnpm generate-types
 ```
 
-## 🎨 Nuxt 3 の基本的な使い方
+## 🎨 Nuxt 4 の基本的な使い方
 
 ### ページの追加
 
@@ -272,7 +274,7 @@ defineProps<Props>();
 <!-- app/pages/index.vue -->
 <template>
   <div>
-    <HelloWorld message="こんにちは、Nuxt 3！" />
+    <HelloWorld message="こんにちは、Nuxt 4！" />
   </div>
 </template>
 ```
@@ -397,7 +399,7 @@ pnpm prettier:fix
 
 ## 📚 参考リンク
 
-- [Nuxt 3 公式ドキュメント](https://nuxt.com/docs)
+- [Nuxt 4 公式ドキュメント](https://nuxt.com/docs)
 - [Vue 3 公式ドキュメント](https://vuejs.org/guide/)
 - [TypeScript 公式ドキュメント](https://www.typescriptlang.org/docs/)
 - [Tailwind CSS 公式ドキュメント](https://tailwindcss.com/docs)
@@ -410,10 +412,6 @@ pnpm prettier:fix
 3. コミット (`git commit -m 'Add some AmazingFeature'`)
 4. ブランチにプッシュ (`git push origin feature/AmazingFeature`)
 5. プルリクエストを作成
-
-## 📄 ライセンス
-
-このプロジェクトはMITライセンスの下で公開されています。
 
 ---
 
