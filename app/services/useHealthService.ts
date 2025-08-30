@@ -1,12 +1,21 @@
+import { useQuery } from '@tanstack/vue-query';
 import type { GetApiHealthResponse } from '#shared/types/api';
 
 export const useHealthService = () => {
-  const getHealthApi = async () => {
-    const { data } = await useFetch<GetApiHealthResponse>('/api/health', {
+  const getHealthApi = async (): Promise<GetApiHealthResponse> => {
+    const response = await $fetch<GetApiHealthResponse>('/api/health', {
       method: 'GET',
     });
-    return data.value;
+    return response;
   };
 
-  return { getHealthApi };
+  const healthQuery = useQuery({
+    queryKey: ['health'],
+    queryFn: getHealthApi,
+  });
+
+  return {
+    getHealthApi,
+    healthQuery,
+  };
 };
