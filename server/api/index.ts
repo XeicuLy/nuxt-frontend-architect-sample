@@ -1,6 +1,9 @@
 import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
+import consola from 'consola';
 import { healthHandler } from './routes/health';
+
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 const app = new OpenAPIHono().basePath('/api');
 
@@ -9,7 +12,7 @@ const app = new OpenAPIHono().basePath('/api');
  */
 healthHandler(app);
 
-app.doc('/openapi.json', {
+app.doc('/openapi.yaml', {
   openapi: '3.0.0',
   info: {
     version: '1.0.0',
@@ -17,7 +20,14 @@ app.doc('/openapi.json', {
   },
 });
 
-app.get('/swagger', swaggerUI({ url: '/api/openapi.json' }));
+app.get('/swagger', swaggerUI({ url: '/api/openapi.yaml' }));
+
+if (isDevelopment) {
+  consola.info('API Server URLs:');
+  consola.info('  Health Check: http://localhost:3000/api/health');
+  consola.info('  Swagger UI: http://localhost:3000/api/swagger');
+  consola.info('  OpenAPI Spec: http://localhost:3000/api/openapi.yaml');
+}
 
 export default defineEventHandler(async (event) => {
   const webReq = toWebRequest(event);
