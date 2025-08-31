@@ -1,6 +1,5 @@
-import { mountSuspended } from '@nuxt/test-utils/runtime';
 import { mount, RouterLinkStub, type VueWrapper } from '@vue/test-utils';
-import type { Component, ComponentPublicInstance, DefineComponent, Slots } from 'vue';
+import type { Component, ComponentPublicInstance, DefineComponent, Slots, VNode } from 'vue';
 import type { setupTestingPinia } from './setupTestingPinia';
 
 interface MountOptions {
@@ -89,6 +88,7 @@ export const mountComponent = <VMValue>(
 
 /**
  * Vueコンポーネントをテスト用に非同期マウントするヘルパー関数
+ * 注意: Nuxt環境でのみ使用可能
  *
  * @template VMValue - コンポーネントインスタンスの型。コンポーネントのプロパティやメソッドへの型安全なアクセスをするために使用
  * @param component - テスト対象のVueコンポーネント
@@ -99,5 +99,7 @@ export const mountSuspendedComponent = async <VMValue>(
   component: Component,
   options: Partial<MountOptions> = DEFAULT_OPTIONS,
 ): Promise<VueWrapper<ComponentPublicInstance & VMValue & DefineComponent>> => {
+  // Nuxt環境でのみ使用可能
+  const { mountSuspended } = await import('@nuxt/test-utils/runtime');
   return await mountSuspended(component, prepareMount(options));
 };
