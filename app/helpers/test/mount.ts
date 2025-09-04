@@ -37,10 +37,13 @@ const DEFAULT_OPTIONS = {
   mocks: {},
   config: {},
   options: {},
-} as const satisfies MountOptions;
+} satisfies MountOptions;
 
 /**
  * マウントオプションを処理して標準化されたマウント設定を返す内部ヘルパー関数
+ *
+ * @param options - 部分的なマウントオプション
+ * @returns Vue Test Utilsのmount関数で使用できる標準化されたオプション
  */
 const prepareMount = (options: Partial<MountOptions>) => {
   const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
