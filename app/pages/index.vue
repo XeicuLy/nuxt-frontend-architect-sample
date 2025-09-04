@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Index from '@/components/index/Index.vue';
 import { useRenderEnvironment } from '@/composables/common/useRenderEnvironment';
-import { useHealth } from '~/composables/useHealth';
+import { useHealth } from '@/composables/useHealth';
 
 const indexPageId = useId();
 const { isInitialClientRender } = useRenderEnvironment();
