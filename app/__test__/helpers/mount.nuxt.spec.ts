@@ -1,5 +1,5 @@
 import { defineStore, setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { computed, defineAsyncComponent, defineComponent, h, nextTick, ref } from 'vue';
 import { mountComponent, mountSuspendedComponent, setupTestingPinia } from '@/helpers/test';
 
@@ -136,10 +136,6 @@ const StoreComponent = defineComponent({
 describe('app/helpers/test/mount.ts', () => {
   beforeEach(() => {
     setActivePinia(setupTestingPinia());
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
   });
 
   describe('コンポーネントの相互作用と状態管理', () => {
