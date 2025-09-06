@@ -34,34 +34,34 @@ const useTestStore = defineStore('test', {
 });
 
 describe('src/helpers/test/setupTestingPinia.ts', () => {
-  describe('ストアの初期化', () => {
-    test('デフォルト状態で機能的なストアインスタンスを提供する', () => {
+  describe('テスト用ストアの初期化', () => {
+    test('テスト環境でストアが正常に動作すること', () => {
       const pinia = setupTestingPinia();
       const store = useTestStore(pinia);
 
-      // 初期状態の確認
+      // ストアの初期状態を確認
       expect(store.count).toBe(TEST_STORE_VALUES.DEFAULT.COUNT);
       expect(store.name).toBe(TEST_STORE_VALUES.DEFAULT.NAME);
     });
 
-    test('アクションによるストア状態の変更をサポートする', () => {
+    test('ストアの状態変更機能がテスト環境で正常に動作すること', () => {
       const pinia = setupTestingPinia();
       const store = useTestStore(pinia);
 
       const initialCount = store.count;
 
-      // アクションの実行
+      // ストアの状態変更操作をテスト
       store.increment();
       store.updateName(TEST_STORE_VALUES.CUSTOM.NEW_NAME);
 
-      // 状態変更の確認
+      // 期待通りに状態が変更されることを確認
       expect(store.count).toBe(initialCount + 1);
       expect(store.name).toBe(TEST_STORE_VALUES.CUSTOM.NEW_NAME);
     });
   });
 
-  describe('カスタム初期状態', () => {
-    test('カスタム初期状態を受け入れて適用する', () => {
+  describe('テストシナリオ別のストア状態設定', () => {
+    test('テストに必要な初期状態を設定できること', () => {
       const customState = {
         test: {
           count: TEST_STORE_VALUES.CUSTOM.INITIAL_COUNT,
@@ -72,12 +72,12 @@ describe('src/helpers/test/setupTestingPinia.ts', () => {
       const pinia = setupTestingPinia(customState);
       const store = useTestStore(pinia);
 
-      // カスタム状態の適用確認
+      // 設定した初期状態が正しく適用されることを確認
       expect(store.count).toBe(TEST_STORE_VALUES.CUSTOM.INITIAL_COUNT);
       expect(store.name).toBe(TEST_STORE_VALUES.CUSTOM.INITIAL_NAME);
     });
 
-    test('カスタム状態でもアクション機能を維持する', () => {
+    test('カスタム初期状態でもストアの機能が正常に動作すること', () => {
       const customState = {
         test: {
           count: TEST_STORE_VALUES.CUSTOM.COUNT_10,
@@ -90,60 +90,56 @@ describe('src/helpers/test/setupTestingPinia.ts', () => {
 
       const initialCount = store.count;
 
-      // カスタム状態でのアクション実行
+      // カスタム初期状態からでもストアの操作が正常に動作することを確認
       store.increment();
       store.updateName(TEST_STORE_VALUES.CUSTOM.UPDATED_NAME);
 
-      // アクションの動作確認
       expect(store.count).toBe(initialCount + 1);
       expect(store.name).toBe(TEST_STORE_VALUES.CUSTOM.UPDATED_NAME);
     });
   });
 
-  describe('テスト環境の互換性', () => {
-    test('独立したテスト機能を提供する', () => {
-      const pinia1 = setupTestingPinia();
-      const pinia2 = setupTestingPinia();
+  describe('テストの分離と信頼性', () => {
+    test('テスト間でのストア状態の分離が適切に機能すること', () => {
+      // 各テストケースで新しいPiniaインスタンスを作成する際の動作を検証
+      const pinia = setupTestingPinia({
+        test: { count: 10, name: 'test-isolation' },
+      });
+      const store = useTestStore(pinia);
 
-      // 異なるPiniaインスタンスが独立していることを確認
-      expect(pinia1).not.toBe(pinia2);
-      expect(pinia1).toBeDefined();
-      expect(pinia2).toBeDefined();
-      expect(typeof pinia1).toBe('object');
-      expect(typeof pinia2).toBe('object');
+      // カスタム初期状態が正しく設定されることを確認
+      expect(store.count).toBe(10);
+      expect(store.name).toBe('test-isolation');
 
-      // 各ストアインスタンスの機能確認
-      const store1 = useTestStore(pinia1);
-      const store2 = useTestStore(pinia2);
+      // ストアの状態変更機能が正常に動作することを確認
+      store.increment();
+      store.updateName('modified');
 
-      expect(store1).toBeDefined();
-      expect(store2).toBeDefined();
+      expect(store.count).toBe(11);
+      expect(store.name).toBe('modified');
 
-      // ストア1の型確認
-      expect(typeof store1.count).toBe('number');
-      expect(typeof store1.name).toBe('string');
-      expect(typeof store1.increment).toBe('function');
-      expect(typeof store1.updateName).toBe('function');
+      // 新しいPiniaインスタンスは前の状態に影響されないことを確認
+      const freshPinia = setupTestingPinia();
+      const freshStore = useTestStore(freshPinia);
 
-      // ストア2の型確認
-      expect(typeof store2.count).toBe('number');
-      expect(typeof store2.name).toBe('string');
-      expect(typeof store2.increment).toBe('function');
-      expect(typeof store2.updateName).toBe('function');
+      expect(freshStore.count).toBe(TEST_STORE_VALUES.DEFAULT.COUNT);
+      expect(freshStore.name).toBe(TEST_STORE_VALUES.DEFAULT.NAME);
     });
 
-    test('コンポーネントテスト用の有効なPiniaインスタンスを作成する', () => {
+    test('テスト用ストアが必要な機能をすべて提供すること', () => {
       const pinia = setupTestingPinia();
-
-      // Piniaインスタンスの有効性確認
-      expect(pinia).toBeDefined();
-      expect(typeof pinia).toBe('object');
-
-      // ストアインスタンスの機能確認
       const store = useTestStore(pinia);
-      expect(store).toBeDefined();
+
+      // テストに必要な基本機能がすべて提供されることを確認
       expect(typeof store.count).toBe('number');
       expect(typeof store.name).toBe('string');
+      expect(typeof store.increment).toBe('function');
+      expect(typeof store.updateName).toBe('function');
+
+      // ストアの操作が正常に動作することを確認
+      const initialCount = store.count;
+      store.increment();
+      expect(store.count).toBe(initialCount + 1);
     });
   });
 });

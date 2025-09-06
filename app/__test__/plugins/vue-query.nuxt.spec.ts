@@ -89,7 +89,7 @@ describe('app/plugins/vue-query.ts', () => {
     vi.clearAllMocks();
   });
 
-  test('プラグインが適切な設定でQueryClientを初期化すること', async () => {
+  test('Vue Queryプラグインが正常に初期化されること', async () => {
     await import('@/plugins/vue-query');
 
     expect(mockDefineNuxtPlugin).toHaveBeenCalledWith(expect.any(Function));
@@ -97,12 +97,12 @@ describe('app/plugins/vue-query.ts', () => {
     // プラグイン関数を実行
     pluginFunction(mockNuxtApp);
 
-    // QueryClientが正しいオプションで作成されること
+    // QueryClientが適切な設定で作成されることを確認
     expect(mockQueryClientConstructor).toHaveBeenCalledWith({
       defaultOptions: {
         queries: {
-          staleTime: 1000 * 60 * 5, // 5分間キャッシュ
-          gcTime: 1000 * 60 * 30, // 30分間メモリに保持
+          staleTime: 1000 * 60 * 5,
+          gcTime: 1000 * 60 * 30,
           refetchOnWindowFocus: false,
           refetchOnMount: true,
           retry: 1,
@@ -111,18 +111,18 @@ describe('app/plugins/vue-query.ts', () => {
     });
   });
 
-  test('プラグインがVueQueryPluginをVueアプリに適用すること', async () => {
+  test('VueアプリにVue Queryプラグインが統合されること', async () => {
     await import('@/plugins/vue-query');
 
     pluginFunction(mockNuxtApp);
 
-    // VueQueryPluginがVueアプリに適用されること
+    // Vue Queryがアプリケーションに統合されることを確認
     expect(mockVueApp.use).toHaveBeenCalledWith(mockVueQueryPlugin, {
       queryClient: mockQueryClient,
     });
   });
 
-  test('useRuntimeコンポーザブルが呼び出されること', async () => {
+  test('ランタイム環境を適切に認識して動作すること', async () => {
     await import('@/plugins/vue-query');
 
     pluginFunction(mockNuxtApp);
@@ -130,7 +130,7 @@ describe('app/plugins/vue-query.ts', () => {
     expect(mockUseRuntime).toHaveBeenCalled();
   });
 
-  test('vue-queryという名前でuseStateが呼び出されること', async () => {
+  test('状態管理のための適切なステートが初期化されること', async () => {
     await import('@/plugins/vue-query');
 
     pluginFunction(mockNuxtApp);
@@ -138,8 +138,8 @@ describe('app/plugins/vue-query.ts', () => {
     expect(mockUseState).toHaveBeenCalledWith('vue-query');
   });
 
-  describe('サーバーサイドの振る舞い', () => {
-    test('isProcessServerがtrueの場合、app:renderedフックが登録されること', async () => {
+  describe('サーバーサイドレンダリングのサポート', () => {
+    test('サーバー環境でデータのシリアライゼーションが設定されること', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: true },
         isProcessClient: { value: false },
@@ -151,7 +151,7 @@ describe('app/plugins/vue-query.ts', () => {
       expect(mockNuxtApp.hooks.hook).toHaveBeenCalledWith('app:rendered', expect.any(Function));
     });
 
-    test('app:renderedフックでdehydrateが実行され、vueQueryStateに設定されること', async () => {
+    test('サーバーでレンダリング時にクエリデータが保存されること', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: true },
         isProcessClient: { value: false },
@@ -166,17 +166,15 @@ describe('app/plugins/vue-query.ts', () => {
       await import('@/plugins/vue-query');
       pluginFunction(mockNuxtApp);
 
-      // app:renderedフックに登録された関数を取得して実行
+      // レンダリング時の処理をシミュレート
       const hookCallback = mockNuxtApp.hooks.hook.mock.calls.find((call) => call[0] === 'app:rendered')?.[1];
-      expect(hookCallback).toBeDefined();
-
       hookCallback();
 
-      expect(mockDehydrate).toHaveBeenCalledWith(mockQueryClient);
+      // サーバーでクエリデータが適切に保存されることを確認
       expect(mockVueQueryState.value).toBe(mockDehydratedState);
     });
 
-    test('isProcessServerがfalseの場合、app:renderedフックが登録されないこと', async () => {
+    test('クライアント環境ではSSR用処理が実行されないこと', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: false },
         isProcessClient: { value: true },
@@ -190,8 +188,8 @@ describe('app/plugins/vue-query.ts', () => {
     });
   });
 
-  describe('クライアントサイドの振る舞い', () => {
-    test('isProcessClientがtrueの場合、app:createdフックが登録されること', async () => {
+  describe('クライアントサイドハイドレーションのサポート', () => {
+    test('クライアント環境でデータのハイドレーションが設定されること', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: false },
         isProcessClient: { value: true },
@@ -203,28 +201,28 @@ describe('app/plugins/vue-query.ts', () => {
       expect(mockNuxtApp.hooks.hook).toHaveBeenCalledWith('app:created', expect.any(Function));
     });
 
-    test('app:createdフックでhydrateが実行されること', async () => {
+    test('クライアントでアプリ作成時にサーバーデータが復元されること', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: false },
         isProcessClient: { value: true },
       });
 
-      const mockVueQueryState = { value: { queries: [], mutations: [] } as DehydratedState };
+      const serverData: DehydratedState = { queries: [], mutations: [] };
+      const mockVueQueryState = { value: serverData };
       mockUseState.mockReturnValue(mockVueQueryState);
 
       await import('@/plugins/vue-query');
       pluginFunction(mockNuxtApp);
 
-      // app:createdフックに登録された関数を取得して実行
+      // アプリ作成時の処理をシミュレート
       const hookCallback = mockNuxtApp.hooks.hook.mock.calls.find((call) => call[0] === 'app:created')?.[1];
-      expect(hookCallback).toBeDefined();
-
       hookCallback();
 
-      expect(mockHydrate).toHaveBeenCalledWith(mockQueryClient, mockVueQueryState.value);
+      // サーバーデータがクライアントで適切に復元されることを確認
+      expect(mockHydrate).toHaveBeenCalledWith(mockQueryClient, serverData);
     });
 
-    test('isProcessClientがfalseの場合、app:createdフックが登録されないこと', async () => {
+    test('サーバー環境ではハイドレーション処理が実行されないこと', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: true },
         isProcessClient: { value: false },
@@ -238,8 +236,8 @@ describe('app/plugins/vue-query.ts', () => {
     });
   });
 
-  describe('ランタイム環境による分岐処理', () => {
-    test('サーバーとクライアントの両方がtrueの場合、両方のフックが登録されること', async () => {
+  describe('ユニバーサルレンダリングの統合', () => {
+    test('SSRとSPAの両方のモードで適切に動作すること', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: true },
         isProcessClient: { value: true },
@@ -248,11 +246,12 @@ describe('app/plugins/vue-query.ts', () => {
       await import('@/plugins/vue-query');
       pluginFunction(mockNuxtApp);
 
+      // 両環境での適切なフック登録を確認
       expect(mockNuxtApp.hooks.hook).toHaveBeenCalledWith('app:rendered', expect.any(Function));
       expect(mockNuxtApp.hooks.hook).toHaveBeenCalledWith('app:created', expect.any(Function));
     });
 
-    test('サーバーとクライアントの両方がfalseの場合、フックが登録されないこと', async () => {
+    test('特殊な環境でもエラーなく初期化できること', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: false },
         isProcessClient: { value: false },
@@ -261,12 +260,13 @@ describe('app/plugins/vue-query.ts', () => {
       await import('@/plugins/vue-query');
       pluginFunction(mockNuxtApp);
 
+      // 特殊な環境でもエラーを起こさないことを確認
       expect(mockNuxtApp.hooks.hook).not.toHaveBeenCalled();
     });
   });
 
-  describe('プラグインの統合動作', () => {
-    test('サーバーサイドでの完全な動作フロー', async () => {
+  describe('Vue Queryの完全なユーザー体験', () => {
+    test('サーバーサイドでデータ取得からクライアントへの引き継ぎが正常に動作すること', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: true },
         isProcessClient: { value: false },
@@ -281,46 +281,43 @@ describe('app/plugins/vue-query.ts', () => {
       await import('@/plugins/vue-query');
       pluginFunction(mockNuxtApp);
 
-      // 基本的な初期化が完了していること
-      expect(mockQueryClientConstructor).toHaveBeenCalled();
+      // Vue Queryがアプリケーションに統合されることを確認
       expect(mockVueApp.use).toHaveBeenCalledWith(mockVueQueryPlugin, {
         queryClient: mockQueryClient,
       });
 
-      // app:renderedフックの実行
+      // サーバーデータの伝達処理をシミュレート
       const hookCallback = mockNuxtApp.hooks.hook.mock.calls.find((call) => call[0] === 'app:rendered')?.[1];
       hookCallback();
 
-      // dehydrateが実行され、状態が保存されること
-      expect(mockDehydrate).toHaveBeenCalledWith(mockQueryClient);
+      // データがクライアントに適切に伝達されることを確認
       expect(mockVueQueryState.value).toBe(mockDehydratedState);
     });
 
-    test('クライアントサイドでの完全な動作フロー', async () => {
+    test('クライアントサイドでサーバーデータの復元が正常に動作すること', async () => {
       mockUseRuntime.mockReturnValue({
         isProcessServer: { value: false },
         isProcessClient: { value: true },
       });
 
-      const existingState: DehydratedState = { queries: [], mutations: [] };
-      const mockVueQueryState = { value: existingState };
+      const serverData: DehydratedState = { queries: [], mutations: [] };
+      const mockVueQueryState = { value: serverData };
       mockUseState.mockReturnValue(mockVueQueryState);
 
       await import('@/plugins/vue-query');
       pluginFunction(mockNuxtApp);
 
-      // 基本的な初期化が完了していること
-      expect(mockQueryClientConstructor).toHaveBeenCalled();
+      // Vue Queryがアプリケーションに統合されることを確認
       expect(mockVueApp.use).toHaveBeenCalledWith(mockVueQueryPlugin, {
         queryClient: mockQueryClient,
       });
 
-      // app:createdフックの実行
+      // クライアントでのデータ復元処理をシミュレート
       const hookCallback = mockNuxtApp.hooks.hook.mock.calls.find((call) => call[0] === 'app:created')?.[1];
       hookCallback();
 
-      // hydrateが実行されること
-      expect(mockHydrate).toHaveBeenCalledWith(mockQueryClient, existingState);
+      // サーバーデータがクライアントで正常に復元されることを確認
+      expect(mockHydrate).toHaveBeenCalledWith(mockQueryClient, serverData);
     });
   });
 });

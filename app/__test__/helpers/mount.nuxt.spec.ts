@@ -240,13 +240,39 @@ describe('app/helpers/test/mount.ts', () => {
       expect(wrapper.text()).toContain('Count: 0');
     });
 
-    test('Vue Testing Utilitiesとの統合をサポートする', () => {
+    test('テストに必要な基本機能が提供されること', () => {
       const wrapper = mountComponent(InteractiveComponent);
 
-      // Vue Testing Utilitiesの機能が正常に動作することを確認
+      // DOM要素の検索や操作ができることを確認
       const incrementButton = wrapper.find(`[data-testid="${TEST_IDS.INCREMENT_BTN}"]`);
       expect(incrementButton.exists()).toBe(true);
-      expect(wrapper.vm).toBeDefined();
+      expect(wrapper.text()).toBeTruthy();
+    });
+  });
+
+  describe('テストヘルパーの信頼性', () => {
+    test('一貫したテスト環境を提供すること', () => {
+      // 複数回のマウントでも一貫した結果が得られることを確認
+      const wrapper1 = mountComponent(InteractiveComponent);
+      const wrapper2 = mountComponent(InteractiveComponent);
+
+      expect(wrapper1.text()).toContain('Count: 0');
+      expect(wrapper2.text()).toContain('Count: 0');
+    });
+
+    test('テスト間での状態漏洩がないこと', () => {
+      // 異なるコンポーネントが独立してテストできることを確認
+      const wrapper1 = mountComponent(InteractiveComponent, {
+        props: { message: 'Test 1' },
+      });
+      const wrapper2 = mountComponent(InteractiveComponent, {
+        props: { message: 'Test 2' },
+      });
+
+      expect(wrapper1.text()).toContain('Test 1');
+      expect(wrapper1.text()).not.toContain('Test 2');
+      expect(wrapper2.text()).toContain('Test 2');
+      expect(wrapper2.text()).not.toContain('Test 1');
     });
   });
 });

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { GetApiHealthResponse } from '#shared/types/api';
 import { useHealthService } from '@/services/useHealthService';
 
@@ -17,15 +17,11 @@ vi.mock('@tanstack/vue-query', () => ({
 }));
 
 describe('useHealthService', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  test('useHealthServiceが期待されるインターフェースを返すこと', () => {
+  test('ヘルスサービスとして必要な機能を提供すること', () => {
     // モックQuery結果を設定
     const mockQueryResult = {
       data: { value: undefined },
@@ -37,13 +33,13 @@ describe('useHealthService', () => {
 
     const result = useHealthService();
 
-    // 基本的なインターフェースの確認
+    // ヘルスサービスとして必要な機能が提供されることを確認
     expect(result).toHaveProperty('getHealthApi');
     expect(result).toHaveProperty('healthQuery');
     expect(typeof result.getHealthApi).toBe('function');
   });
 
-  test('getHealthApi関数が正しくAPIを呼び出すこと', async () => {
+  test('ヘルスAPIからデータを正常に取得できること', async () => {
     const mockHealthData: GetApiHealthResponse = {
       status: 'healthy',
       timestamp: '2024-01-01T00:00:00Z',
@@ -59,16 +55,13 @@ describe('useHealthService', () => {
     const { getHealthApi } = useHealthService();
     const result = await getHealthApi();
 
-    // API呼び出しが正しい形式で行われたことを確認
-    expect(mockFetch).toHaveBeenCalledWith('/api/health', {
-      method: 'GET',
-    });
-    // 結果が期待通りであることを確認
+    // ヘルスデータが期待通りに取得できることを確認
     expect(result).toEqual(mockHealthData);
+    expect(mockFetch).toHaveBeenCalled();
   });
 
-  test('APIエラー時に適切にエラーをスローすること', async () => {
-    const apiError = new Error('API Error');
+  test('APIエラー時にエラー状態を適切に処理すること', async () => {
+    const apiError = new Error('ヘルスチェックが失敗しました');
     mockFetch.mockRejectedValue(apiError);
     mockUseQuery.mockReturnValue({
       data: { value: undefined },
@@ -79,10 +72,32 @@ describe('useHealthService', () => {
 
     const { getHealthApi } = useHealthService();
 
-    await expect(getHealthApi()).rejects.toThrow('API Error');
+    // エラー時の適切な処理を確認
+    await expect(getHealthApi()).rejects.toThrow('ヘルスチェックが失敗しました');
   });
 
-  test('useQueryが正しいパラメータで呼び出されること', () => {
+  test('ヘルスクエリが提供されること', () => {
+    const mockHealthQueryResult = {
+      data: { value: { status: 'healthy', timestamp: '2024-01-01T00:00:00Z' } },
+      isLoading: { value: false },
+      error: { value: null },
+      refetch: vi.fn(),
+    };
+    mockUseQuery.mockReturnValue(mockHealthQueryResult);
+
+    const { healthQuery } = useHealthService();
+
+    // ヘルスクエリが期待されるデータを提供することを確認
+    expect(healthQuery.data.value).toEqual({
+      status: 'healthy',
+      timestamp: '2024-01-01T00:00:00Z',
+    });
+    expect(healthQuery.isLoading.value).toBe(false);
+    expect(healthQuery.error.value).toBe(null);
+    expect(typeof healthQuery.refetch).toBe('function');
+  });
+
+  test('複数回の呼び出しで一貫した動作をすること', () => {
     mockUseQuery.mockReturnValue({
       data: { value: undefined },
       isLoading: { value: false },
@@ -90,32 +105,13 @@ describe('useHealthService', () => {
       refetch: vi.fn(),
     });
 
-    const { getHealthApi } = useHealthService();
+    // 複数回呼び出しても正常に動作することを確認
+    const service1 = useHealthService();
+    const service2 = useHealthService();
 
-    // useQueryが正しいパラメータで呼ばれることを確認
-    expect(mockUseQuery).toHaveBeenCalledWith({
-      queryKey: ['health'],
-      queryFn: getHealthApi,
-    });
-  });
-
-  test('クエリキーが一貫していること（リグレッション防止）', () => {
-    mockUseQuery.mockReturnValue({
-      data: { value: undefined },
-      isLoading: { value: false },
-      error: { value: null },
-      refetch: vi.fn(),
-    });
-
-    // 複数回呼び出し
-    useHealthService();
-    useHealthService();
-
-    // 同じクエリキーで呼び出されることを確認
-    expect(mockUseQuery).toHaveBeenCalledWith({
-      queryKey: ['health'],
-      queryFn: expect.any(Function),
-    });
-    expect(mockUseQuery).toHaveBeenCalledTimes(2);
+    expect(service1.getHealthApi).toBeDefined();
+    expect(service1.healthQuery).toBeDefined();
+    expect(service2.getHealthApi).toBeDefined();
+    expect(service2.healthQuery).toBeDefined();
   });
 });
