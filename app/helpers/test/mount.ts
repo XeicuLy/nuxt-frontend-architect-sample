@@ -2,7 +2,7 @@ import { mount, RouterLinkStub, type VueWrapper } from '@vue/test-utils';
 import type { Component, ComponentPublicInstance, DefineComponent, Slots, VNode } from 'vue';
 import type { setupTestingPinia } from './setupTestingPinia';
 
-interface MountOptions {
+export interface MountOptions {
   /** テスト用のPiniaインスタンス（setupTestingPinia関数で作成したもの） */
   testingPinia?: ReturnType<typeof setupTestingPinia>;
   /** コンポーネントをマウントするDOM要素 */
