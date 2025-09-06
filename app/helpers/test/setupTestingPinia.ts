@@ -1,4 +1,4 @@
-import { createTestingPinia } from '@pinia/testing';
+import { createTestingPinia, type TestingPinia } from '@pinia/testing';
 import type { StateTree } from 'pinia';
 import { vi } from 'vitest';
 
@@ -8,7 +8,7 @@ import { vi } from 'vitest';
  * @param initialState - Piniaストアに設定する初期状態（デフォルトは空オブジェクト）
  * @returns テスト用Piniaインスタンス
  */
-export const setupTestingPinia = (initialState: StateTree = {}) => {
+export const setupTestingPinia = (initialState: StateTree = {}): TestingPinia => {
   const testingPinia = createTestingPinia({
     stubActions: false,
     createSpy: vi.fn,
