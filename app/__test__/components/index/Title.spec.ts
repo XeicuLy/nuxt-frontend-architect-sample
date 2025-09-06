@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import Title from '~/components/index/Title.vue';
-import { mountComponent } from '~/helpers/test';
+import Title from '@/components/index/Title.vue';
+import { mountComponent } from '@/helpers/test';
 
 const defaultProps = {
   title: 'テストタイトル',

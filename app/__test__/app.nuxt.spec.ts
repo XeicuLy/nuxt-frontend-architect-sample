@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import App from '~/app.vue';
-import { mountComponent } from '~/helpers/test';
+import App from '@/app.vue';
+import { mountComponent } from '@/helpers/test';
 
 const NuxtRouteAnnouncer = {
   template: '<div id="nuxt-route-announcer"></div>',
