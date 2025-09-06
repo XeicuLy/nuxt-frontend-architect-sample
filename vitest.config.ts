@@ -1,7 +1,10 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineVitestProject } from '@nuxt/test-utils/config';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vitest/config';
+
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   test: {
@@ -24,8 +27,8 @@ export default defineConfig({
         },
         resolve: {
           alias: {
-            '@': path.resolve(__dirname, './app/'),
-            '~': path.resolve(__dirname, './app/'),
+            '@': path.resolve(rootDir, './app/'),
+            '~': path.resolve(rootDir, './app/'),
           },
         },
       },
