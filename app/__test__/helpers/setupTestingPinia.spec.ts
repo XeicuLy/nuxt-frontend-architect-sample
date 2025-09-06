@@ -33,7 +33,7 @@ const useTestStore = defineStore('test', {
   },
 });
 
-describe('src/helpers/test/setupTestingPinia.ts', () => {
+describe('app/helpers/test/setupTestingPinia.ts', () => {
   describe('テスト用ストアの初期化', () => {
     test('テスト環境でストアが正常に動作すること', () => {
       const pinia = setupTestingPinia();
