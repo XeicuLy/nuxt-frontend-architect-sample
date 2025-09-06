@@ -102,7 +102,8 @@
       "mcp__serena__create_text_file",
       "mcp__serena__delete_lines",
       "mcp__serena__execute_shell_command",
-      "mcp__serena__replace_lines"
+      "mcp__serena__replace_lines",
+      "mcp__serena__find_symbol"
     ]
   },
   "model": "sonnet",

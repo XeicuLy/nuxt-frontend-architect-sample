@@ -46,5 +46,8 @@ jobs:
       - name: Execute TypeCheck
         run: pnpm typecheck
 
+      - name: Execute Vitest
+        run: pnpm test:coverage
+
       - name: Execute Build
         run: pnpm build

@@ -9,7 +9,7 @@ defineProps<Props>();
 
 <template>
   <ul>
-    <li>status: {{ status }}</li>
-    <li>timestamp: {{ timestamp }}</li>
+    <li data-testid="status-display-aria">status: {{ status }}</li>
+    <li data-testid="timestamp-display-aria">timestamp: {{ timestamp }}</li>
   </ul>
 </template>
