@@ -1,6 +1,6 @@
+import { flushPromises } from '@vue/test-utils';
 import { defineStore, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { computed, defineAsyncComponent, defineComponent, h, nextTick, ref } from 'vue';
 import { mountComponent, mountSuspendedComponent, setupTestingPinia } from '@/helpers/test';
 
 // テスト用の定数
@@ -192,7 +192,7 @@ describe('app/helpers/test/mount.ts', () => {
   describe('非同期コンポーネントの処理', () => {
     test('非同期コンポーネントを適切に処理する', async () => {
       const wrapper = await mountSuspendedComponent(AsyncTestComponent);
-      await nextTick();
+      await flushPromises();
 
       expect(wrapper.text()).toContain(`Async data: ${TEST_CONTENT.ASYNC_DATA}`);
     });
