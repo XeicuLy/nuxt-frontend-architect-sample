@@ -20,7 +20,7 @@ describe('useHealthService', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     // グローバルスタブをクリーンアップ
     vi.unstubAllGlobals();
   });
