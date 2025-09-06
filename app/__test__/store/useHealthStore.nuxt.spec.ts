@@ -19,7 +19,6 @@ vi.mock('@/services/useHealthService', () => ({
 
 describe('app/store/useHealthStore.ts', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     setActivePinia(setupTestingPinia());
     mockUseHealthService.mockReturnValue({
       healthQuery: mockHealthQuery,

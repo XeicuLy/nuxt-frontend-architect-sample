@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { GetApiHealthResponse } from '#shared/types/api';
 import { useHealthService } from '@/services/useHealthService';
 
@@ -8,29 +8,24 @@ const { mockFetch, mockUseQuery } = vi.hoisted(() => ({
   mockUseQuery: vi.fn(),
 }));
 
-// $fetchのモック（グローバル関数として設定）
-globalThis.$fetch = mockFetch as unknown as typeof $fetch;
-
 // vue-queryのモック
 vi.mock('@tanstack/vue-query', () => ({
   useQuery: mockUseQuery,
 }));
 
 describe('useHealthService', () => {
+  beforeEach(() => {
+    // $fetchをグローバルスタブでモック（グローバル汚染回避）
+    vi.stubGlobal('$fetch', mockFetch);
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
+    // グローバルスタブをクリーンアップ
+    vi.unstubAllGlobals();
   });
 
   test('ヘルスサービスとして必要な機能を提供すること', () => {
-    // モックQuery結果を設定
-    const mockQueryResult = {
-      data: { value: undefined },
-      isLoading: { value: false },
-      error: { value: null },
-      refetch: vi.fn(),
-    };
-    mockUseQuery.mockReturnValue(mockQueryResult);
-
     const result = useHealthService();
 
     // ヘルスサービスとして必要な機能が提供されることを確認
@@ -57,7 +52,7 @@ describe('useHealthService', () => {
 
     // ヘルスデータが期待通りに取得できることを確認
     expect(result).toEqual(mockHealthData);
-    expect(mockFetch).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith('/api/health', { method: 'GET' });
   });
 
   test('APIエラー時にエラー状態を適切に処理すること', async () => {
