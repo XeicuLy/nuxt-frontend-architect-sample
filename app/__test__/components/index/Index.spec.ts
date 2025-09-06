@@ -6,7 +6,7 @@ const { mockUseHealth } = vi.hoisted(() => ({
   mockUseHealth: vi.fn(),
 }));
 
-vi.mock('@/composables/useHealth', async () => ({
+vi.mock('@/composables/useHealth', () => ({
   useHealth: mockUseHealth,
 }));
 
