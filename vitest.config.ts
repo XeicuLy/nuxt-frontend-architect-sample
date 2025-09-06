@@ -10,6 +10,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reportsDirectory: '../logs/coverage',
+      exclude: ['**/types/*'],
+      include: ['app/**/*', 'server/**/*', 'shared/**/*'],
     },
     projects: [
       {
