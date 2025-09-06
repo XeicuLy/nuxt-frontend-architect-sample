@@ -27,7 +27,7 @@ describe('app/store/useHealthStore.ts', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('初期状態', () => {

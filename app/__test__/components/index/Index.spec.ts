@@ -29,7 +29,7 @@ describe('app/components/index/Index.vue', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   test('必要な子コンポーネントが存在すること', () => {

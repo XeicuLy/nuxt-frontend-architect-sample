@@ -18,7 +18,7 @@ vi.mock('@tanstack/vue-query', () => ({
 
 describe('useHealthService', () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   test('ヘルスサービスとして必要な機能を提供すること', () => {

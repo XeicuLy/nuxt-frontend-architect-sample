@@ -13,7 +13,7 @@ vi.mock('@/store/useHealthStore', () => ({
 
 describe('app/composables/useHealth/useHealthAdapter.ts', () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('ストア統合の振る舞い', () => {

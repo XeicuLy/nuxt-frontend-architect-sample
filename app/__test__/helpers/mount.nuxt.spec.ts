@@ -139,7 +139,7 @@ describe('app/helpers/test/mount.ts', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('コンポーネントの相互作用と状態管理', () => {

@@ -21,7 +21,7 @@ mockNuxtImport('useNuxtApp', async () => {
 
 describe('app/composables/common/useRenderEnvironment.ts', () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('isInitialClientRender', () => {

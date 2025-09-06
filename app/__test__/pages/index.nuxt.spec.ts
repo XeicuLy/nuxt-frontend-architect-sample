@@ -30,7 +30,7 @@ describe('app/pages/index.vue', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   test('子コンポーネントのIndexコンポーネントが存在すること', async () => {
