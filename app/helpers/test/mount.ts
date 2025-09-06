@@ -85,7 +85,7 @@ const prepareMount = (options: Partial<MountOptions>) => {
 export const mountComponent = <VMValue>(
   component: Component,
   options: Partial<MountOptions> = DEFAULT_OPTIONS,
-): VueWrapper<ComponentPublicInstance & VMValue & DefineComponent> => {
+): VueWrapper<ComponentPublicInstance & VMValue> => {
   return mount(component, prepareMount(options));
 };
 
