@@ -7,5 +7,5 @@ defineProps<Props>();
 </script>
 
 <template>
-  <h1 class="text-lg font-bold">{{ title }}</h1>
+  <h1 data-testid="title" class="text-lg font-bold">{{ title }}</h1>
 </template>
