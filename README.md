@@ -22,7 +22,7 @@
 - **[TanStack Query](https://tanstack.com/query)** - 強力なデータ同期・キャッシングライブラリ
 - **[TypeScript](https://www.typescriptlang.org/)** - 型安全な開発
 - **[Tailwind CSS](https://tailwindcss.com/)** - ユーティリティファーストCSSフレームワーク
-- **[Pinia](https://pinia.vuejs.org/)** - Vue 3向け状態管理ライブラリ
+- **[Pinia](https://pinia.vuejs.org/)** - Vue 3向けクライアント状態管理ライブラリ（UI状態、ユーザー設定用）
 
 #### バックエンド
 
@@ -42,7 +42,7 @@
 - **モノレポ構成**: フロントエンド、バックエンド、共有型定義を統合管理
 - **API-First開発**: OpenAPI仕様からTypeScript型定義を自動生成
 - **型安全な通信**: フロントエンド⇔バックエンド間の完全な型安全性
-- **効率的なデータ管理**: TanStack QueryによるSSR対応キャッシング・同期機能
+- **効率的なデータ管理**: TanStack Queryによるサーバー状態管理・SSR対応キャッシング・同期機能
 - **高性能API**: Honoによるエッジランタイム対応の軽量で高速なAPI
 - **コンポーザブル設計**: 再利用可能なロジックの分離
 - **モダンツールチェーン**: 開発効率を最大化する最新ツール
@@ -87,21 +87,26 @@
 ## 📁 プロジェクト構造
 
 ```
-├── app/                      # Nuxtアプリケーション
-│   ├── components/           # Vueコンポーネント
-│   ├── composables/          # 再利用可能なコンポジション関数
-│   ├── layouts/              # ページレイアウト
-│   ├── pages/                # ルートページ (ファイルベースルーティング)
-│   ├── services/             # ビジネスロジック・API通信
-│   ├── store/                # Pinia状態管理
-│   └── assets/css/           # スタイルシート
-├── server/                   # バックエンドAPI
+├── app/                           # Nuxtアプリケーション
+│   ├── components/                # Vueコンポーネント
+│   │   └── index/                 # インデックスページ用コンポーネント
+│   ├── composables/               # 再利用可能なコンポジション関数
+│   │   ├── common/                # 共通ユーティリティ
+│   │   └── useHealth/             # ヘルスチェック機能
+│   ├── layouts/                   # ページレイアウト
+│   ├── pages/                     # ルートページ (ファイルベースルーティング)
+│   ├── services/                  # API通信・ビジネスロジック
+│   ├── plugins/                   # Nuxtプラグイン (TanStack Query設定)
+│   ├── helpers/test/              # テストヘルパー
+│   ├── types/                     # 型定義
+│   └── assets/css/                # スタイルシート
+├── server/                        # バックエンドAPI
 │   └── api/
-│       ├── routes/           # API ルートハンドラー
-│       └── schema/           # Zodスキーマ定義
-├── shared/                   # 共有リソース
-│   └── types/api/            # 自動生成された型定義とZodスキーマ
-└── public/                   # 静的ファイル
+│       ├── routes/                # API ルートハンドラー
+│       └── schema/                # Zodスキーマ定義
+├── shared/                        # 共有リソース
+│   └── types/api/                 # 自動生成された型定義とZodスキーマ
+└── public/                        # 静的ファイル
 ```
 
 ### 主要ファイルの役割
@@ -176,101 +181,178 @@ shared/types/api/
 
 ### 使用例
 
-#### 1. 基本的な型の使用（現在のコード例）
+#### 1. サービス層でのAPI通信とバリデーション（現在の実装）
 
 ```typescript
-// services/useHealthService.ts
-import type { GetApiHealthResponse } from '#shared/types/api';
-
-export const useHealthService = () => {
-  const getHealthApi = async () => {
-    const { data } = await useFetch<GetApiHealthResponse>('/api/health', {
-      method: 'GET',
-    });
-    return data.value;
-  };
-
-  return { getHealthApi };
-};
-```
-
-#### 2. Zodスキーマを使ったランタイムバリデーション
-
-```typescript
-// services/useHealthServiceWithValidation.ts
-import { zGetApiHealthResponse } from '#shared/types/api';
-
-export const useHealthServiceWithValidation = () => {
-  const getHealthApi = async () => {
-    const response = await $fetch('/api/health');
-
-    // APIレスポンスをZodスキーマで検証
-    const validatedData = zGetApiHealthResponse.parse(response);
-
-    return validatedData;
-  };
-
-  return { getHealthApi };
-};
-```
-
-#### 3. TanStack Query を使ったリアクティブなデータフェッチ（推奨）
-
-```typescript
-// services/useHealthService.ts
-import { useQuery } from '@tanstack/vue-query';
+// app/services/health.ts
 import { type GetApiHealthResponse, zGetApiHealthResponse } from '#shared/types/api';
 
-export const useHealthService = () => {
-  const getHealthApi = async (): Promise<GetApiHealthResponse> => {
-    const response = await $fetch<GetApiHealthResponse>('/api/health');
-    return zGetApiHealthResponse.parse(response); // Zodでランタイム検証
-  };
+export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
+  const response = await $fetch<GetApiHealthResponse>('/api/health', {
+    method: 'GET',
+  });
+  return zGetApiHealthResponse.parse(response); // Zodバリデーション
+};
+```
 
+#### 2. TanStack Queryコンポーザブル（現在の実装）
+
+```typescript
+// app/composables/useHealth/useHealthQuery.ts
+import { useQuery } from '@tanstack/vue-query';
+import { getHealthApi } from '@/services/health';
+
+export const useHealthQuery = () => {
   const healthQuery = useQuery({
-    queryKey: ['health'],
+    queryKey: ['health'] as const,
     queryFn: getHealthApi,
   });
+  return { healthQuery };
+};
 
+// app/composables/useHealth/useHealthAdapter.ts
+import { useHealthQuery } from './useHealthQuery';
+
+export interface HealthStatusData {
+  healthStatus: string;
+  healthTimestamp: string;
+}
+
+export const useHealthAdapter = () => {
+  const { healthQuery } = useHealthQuery();
+  const { isLoading, data: healthData, suspense: getHealthData } = healthQuery;
+
+  const healthStatus = computed<string>(() => healthData.value?.status ?? '-');
+  const healthTimestamp = computed<string>(() => healthData.value?.timestamp ?? '-');
+
+  const healthStatusData = computed<HealthStatusData>(() => ({
+    healthStatus: healthStatus.value,
+    healthTimestamp: healthTimestamp.value,
+  }));
+
+  return { isLoading, healthStatusData, getHealthData };
+};
+
+// app/composables/useHealth/index.ts
+import { useHealthAdapter } from './useHealthAdapter';
+import { useHealthQuery } from './useHealthQuery';
+
+export const useHealth = () => {
   return {
-    healthQuery, // { data, error, isLoading, refetch, ... }
+    ...useHealthAdapter(),
+    ...useHealthQuery(),
   };
 };
+```
+
+#### 3. コンポーネントでの使用例（現在の実装）
+
+```vue
+<!-- app/pages/index.vue -->
+<script setup lang="ts">
+import Index from '@/components/index/Index.vue';
+import { useRenderEnvironment } from '@/composables/common/useRenderEnvironment';
+import { useHealth } from '@/composables/useHealth';
+
+const indexPageId = useId();
+const { isInitialClientRender } = useRenderEnvironment();
+const { getHealthData } = useHealth();
+
+const handleInit = async () => {
+  if (isInitialClientRender.value) {
+    return;
+  }
+  await getHealthData();
+};
+
+await handleInit();
+</script>
+
+<template>
+  <section :id="indexPageId">
+    <Index />
+  </section>
+</template>
 ```
 
 ```vue
-<!-- pages/index.vue -->
+<!-- app/components/index/Index.vue -->
+<script setup lang="ts">
+import { useHealth } from '@/composables/useHealth';
+import HealthStatusDisplayArea from './HealthStatusDisplayArea.vue';
+import Title from './Title.vue';
+
+const greetingMessage = 'Hello, Frontend Architect Sample!';
+const { isLoading, healthStatusData } = useHealth();
+</script>
+
 <template>
   <div>
-    <div v-if="healthQuery.isLoading.value">読み込み中...</div>
-    <div v-else-if="healthQuery.error.value">エラー: {{ healthQuery.error.value }}</div>
-    <div v-else>
-      <h2>API Status: {{ healthQuery.data.value?.status }}</h2>
-      <p>Timestamp: {{ healthQuery.data.value?.timestamp }}</p>
-      <button @click="healthQuery.refetch()">再取得</button>
-    </div>
+    <Title :title="greetingMessage" />
+    <template v-if="isLoading">
+      <p>Loading...</p>
+    </template>
+    <template v-else>
+      <HealthStatusDisplayArea v-bind="healthStatusData" />
+    </template>
   </div>
 </template>
-
-<script setup lang="ts">
-const { healthQuery } = useHealthService();
-</script>
 ```
 
-#### 4. セーフパース（エラーハンドリング付き）
+```vue
+<!-- app/components/index/HealthStatusDisplayArea.vue -->
+<script setup lang="ts">
+import type { HealthStatusData } from '@/composables/useHealth/useHealthAdapter';
+
+type Props = HealthStatusData;
+defineProps<Props>();
+</script>
+
+<template>
+  <ul>
+    <li>status: {{ healthStatus }}</li>
+    <li>timestamp: {{ healthTimestamp }}</li>
+  </ul>
+</template>
+```
+
+#### 4. 状態管理の分離パターン
 
 ```typescript
-import { zGetApiHealthResponse } from '#shared/types/api';
-
-const response = await $fetch('/api/health');
-const result = zGetApiHealthResponse.safeParse(response);
-
-if (result.success) {
-  console.log('有効なデータ:', result.data);
-} else {
-  console.error('バリデーションエラー:', result.error);
-}
+// 現在の実装: TanStack Queryのみで状態管理
+// app/composables/useHealth/index.ts
+export const useHealth = () => {
+  return {
+    ...useHealthAdapter(), // データ変換・ビジネスロジック
+    ...useHealthQuery(), // データフェッチング・キャッシング
+  };
+};
 ```
+
+**Adapterパターンの利点**：
+
+- **データ変換**: APIレスポンスをコンポーネント用に整形
+- **ビジネスロジックの分離**: 表示用データの管理
+- **コンポーネントの簡素化**: プロップスでデータを受け取るだけ
+
+**注意**: 現在Piniaストアは実装されておらず、全ての状態管理をTanStack Queryで行っています。
+
+### アーキテクチャの特徴と利点
+
+このプロジェクトでは、**TanStack Queryを主軍としたシンプルな状態管理**を実現しています：
+
+**TanStack Query （メインの状態管理）**
+
+- APIデータのフェッチング・キャッシング・同期
+- バックグラウンド更新とエラーハンドリング
+- SSR/SSGでのデータハイドレーション
+- Adapterパターンによるデータ変換とビジネスロジックの分離
+
+**Pinia （将来的なクライアント状態管理用）**
+
+- 現在は実装されていないが、将来的にUI状態等の管理に使用予定
+- UI状態（ダークモード、サイドバー開閉等）
+- ユーザー設定やローカルデータ
 
 ### TanStack Query の設定
 
