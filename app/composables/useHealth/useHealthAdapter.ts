@@ -1,4 +1,4 @@
-import { useHealthQuery } from './useHealthQuery';
+import { useHealthQuery } from '@/queries/useHealthQuery';
 
 export interface HealthStatusData {
   healthStatus: string;
