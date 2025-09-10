@@ -32,7 +32,9 @@
 │   │   └── index/                 # インデックスページ用コンポーネント
 │   ├── composables/               # 再利用可能なコンポジション関数
 │   │   ├── common/                # 共通ユーティリティ
-│   │   └── useHealth/             # ヘルスチェック機能
+│   │   └── useHealth/             # ヘルスチェック機能（アダプター）
+│   ├── queries/                   # TanStack Query層
+│   │   └── useHealthQuery.ts      # ヘルスチェック用クエリ
 │   ├── layouts/                   # ページレイアウト
 │   ├── pages/                     # ルートページ (ファイルベースルーティング)
 │   ├── services/                  # API通信・ビジネスロジック
@@ -55,22 +57,23 @@
 - 現在は**Piniaストアは一切実装されていない**
 - 全ての状態管理をTanStack Queryで実行
 - `app/plugins/vue-query.ts` でSSR対応設定
-- `app/composables/useHealth/` でクエリロジック実装
+- `app/queries/` でクエリロジック実装
+- `app/composables/useHealth/` でアダプターロジック実装
 - `app/services/health.ts` でAPI通信とZodバリデーション
 
-**Adapterパターンの採用**
+**Query Layer + Adapterパターンの採用**
 
-- `useHealthQuery`: TanStack Queryの直接使用
-- `useHealthAdapter`: データ変換・ビジネスロジック
-- `useHealth`: 両者を統合したメインAPI
+- `useHealthQuery` (`app/queries/`): TanStack Queryの直接使用
+- `useHealthAdapter` (`app/composables/useHealth/`): データ変換・ビジネスロジック
+- `useHealth` (`app/composables/useHealth/`): アダプター機能を統合したメインAPI
 - コンポーネントはpropsでデータを受け取る設計
 
 ## 実装例
 
-### TanStack Query + Adapterパターン
+### Query Layer + Adapterパターン
 
 ```typescript
-// app/composables/useHealth/useHealthQuery.ts
+// app/queries/useHealthQuery.ts
 export const useHealthQuery = () => {
   const healthQuery = useQuery({
     queryKey: ['health'] as const,
@@ -81,7 +84,7 @@ export const useHealthQuery = () => {
 
 // app/composables/useHealth/useHealthAdapter.ts
 export const useHealthAdapter = () => {
-  const { healthQuery } = useHealthQuery();
+  const { healthQuery } = useHealthQuery(); // from @/queries/useHealthQuery
   const { isLoading, data: healthData, suspense: getHealthData } = healthQuery;
 
   const healthStatusData = computed<HealthStatusData>(() => ({
@@ -95,8 +98,7 @@ export const useHealthAdapter = () => {
 // app/composables/useHealth/index.ts
 export const useHealth = () => {
   return {
-    ...useHealthAdapter(),
-    ...useHealthQuery(),
+    ...useHealthAdapter(), // Only adapter, not direct query access
   };
 };
 ```

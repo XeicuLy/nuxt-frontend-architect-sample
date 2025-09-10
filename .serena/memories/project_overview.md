@@ -53,9 +53,10 @@ This is a **Nuxt 4 + Hono + TanStack Query フルスタック サンプル** pro
 ### Data Flow
 
 1. **Service Layer** (`app/services/`) - API calls with Zod validation
-2. **Query Composables** (`app/composables/useHealth/`) - TanStack Query integration
-3. **Components** - Consume data through query composables
-4. **Client Stores** - Manage UI-only state when needed
+2. **Query Layer** (`app/queries/`) - TanStack Query integration
+3. **Adapter Composables** (`app/composables/useHealth/`) - Data transformation and business logic
+4. **Components** - Consume data through adapter composables
+5. **Client Stores** - Manage UI-only state when needed (currently not implemented)
 
 ### SSR/SSG Support
 

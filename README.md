@@ -90,9 +90,11 @@
 ├── app/                           # Nuxtアプリケーション
 │   ├── components/                # Vueコンポーネント
 │   │   └── index/                 # インデックスページ用コンポーネント
-│   ├── composables/               # 再利用可能なコンポジション関数
+│   ├── composables/               # 再利用可能なコンポジション関数（アダプター）
 │   │   ├── common/                # 共通ユーティリティ
-│   │   └── useHealth/             # ヘルスチェック機能
+│   │   └── useHealth/             # ヘルスチェック機能アダプター
+│   ├── queries/                   # TanStack Query層
+│   │   └── useHealthQuery.ts      # ヘルスチェック用クエリ
 │   ├── layouts/                   # ページレイアウト
 │   ├── pages/                     # ルートページ (ファイルベースルーティング)
 │   ├── services/                  # API通信・ビジネスロジック
@@ -195,52 +197,63 @@ export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
 };
 ```
 
-#### 2. TanStack Queryコンポーザブル（現在の実装）
+#### 2. データフローの仕組み（現在の実装）
+
+このプロジェクトでは、**API→コンポーネント**へのデータの流れを4つの層に分けて整理しています。
+
+**🔍 なぜ分ける？**
+
+- 各層の責任がはっきりする
+- 問題の原因を特定しやすい
+- コードの再利用がしやすい
+- テストが書きやすくなる
+
+**📋 データの流れ**
+
+1. **API通信** (`app/services/`) - HTTPリクエスト＋データ検証
+2. **データ取得** (`app/queries/`) - TanStack Queryでキャッシングと状態管理
+3. **データ整形** (`app/composables/`) - 画面表示用にデータを加工
+4. **表示** (コンポーネント) - 整形されたデータを表示
 
 ```typescript
-// app/composables/useHealth/useHealthQuery.ts
-import { useQuery } from '@tanstack/vue-query';
-import { getHealthApi } from '@/services/health';
+// 1️⃣ API通信 (app/services/health.ts)
+// HTTP通信とZodによるデータ検証
+export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
+  const response = await $fetch<GetApiHealthResponse>('/api/health', {
+    method: 'GET',
+  });
+  return zGetApiHealthResponse.parse(response); // データ検証
+};
 
+// 2️⃣ データ取得 (app/queries/useHealthQuery.ts)
+// TanStack Queryでキャッシングと再取得の管理
 export const useHealthQuery = () => {
   const healthQuery = useQuery({
     queryKey: ['health'] as const,
-    queryFn: getHealthApi,
+    queryFn: getHealthApi, // ①で定義した関数を使用
   });
   return { healthQuery };
 };
 
-// app/composables/useHealth/useHealthAdapter.ts
-import { useHealthQuery } from './useHealthQuery';
-
-export interface HealthStatusData {
-  healthStatus: string;
-  healthTimestamp: string;
-}
-
+// 3️⃣ データ整形 (app/composables/useHealth/useHealthAdapter.ts)
+// APIデータを画面表示用に変換
 export const useHealthAdapter = () => {
-  const { healthQuery } = useHealthQuery();
-  const { isLoading, data: healthData, suspense: getHealthData } = healthQuery;
+  const { healthQuery } = useHealthQuery(); // ②から受け取り
+  const { isLoading, data, suspense: getHealthData } = healthQuery;
 
-  const healthStatus = computed<string>(() => healthData.value?.status ?? '-');
-  const healthTimestamp = computed<string>(() => healthData.value?.timestamp ?? '-');
-
-  const healthStatusData = computed<HealthStatusData>(() => ({
-    healthStatus: healthStatus.value,
-    healthTimestamp: healthTimestamp.value,
+  // 画面表示用にデータを整形
+  const healthStatusData = computed(() => ({
+    healthStatus: data.value?.status ?? '-', // 生データを表示用に変換
+    healthTimestamp: data.value?.timestamp ?? '-',
   }));
 
   return { isLoading, healthStatusData, getHealthData };
 };
 
-// app/composables/useHealth/index.ts
-import { useHealthAdapter } from './useHealthAdapter';
-import { useHealthQuery } from './useHealthQuery';
-
+// 4️⃣ コンポーネント用の入り口 (app/composables/useHealth/index.ts)
 export const useHealth = () => {
   return {
-    ...useHealthAdapter(),
-    ...useHealthQuery(),
+    ...useHealthAdapter(), // ③で整形されたデータを提供
   };
 };
 ```
@@ -316,43 +329,69 @@ defineProps<Props>();
 </template>
 ```
 
-#### 4. 状態管理の分離パターン
+#### 4. この構成の利点
+
+**🎯 各層の責任がはっきり分かれている**
 
 ```typescript
-// 現在の実装: TanStack Queryのみで状態管理
-// app/composables/useHealth/index.ts
-export const useHealth = () => {
-  return {
-    ...useHealthAdapter(), // データ変換・ビジネスロジック
-    ...useHealthQuery(), // データフェッチング・キャッシング
-  };
+// ❌ もしも全部まとめて書いたら...
+const useHealth = () => {
+  // HTTP通信、エラーハンドリング、キャッシング、データ変換が混在
+  // 100行を超える複雑なコードになる😵
 };
+
+// ✅ 実際の実装: 責任ごとに4層に分離
+const getHealthApi = () => $fetch('/api/health'); // HTTP通信だけ
+const useHealthQuery = () => useQuery({ queryFn: getHealthApi }); // キャッシング管理だけ
+const useHealthAdapter = () => ({ healthStatusData }); // データ変換だけ
+const useHealth = () => useHealthAdapter(); // 最終的な窓口
 ```
 
-**Adapterパターンの利点**：
+**📈 こんな良いことがある**
 
-- **データ変換**: APIレスポンスをコンポーネント用に整形
-- **ビジネスロジックの分離**: 表示用データの管理
-- **コンポーネントの簡素化**: プロップスでデータを受け取るだけ
+- **問題を見つけやすい**:
+  - 「通信エラー」→ `services/` を確認
+  - 「キャッシュの問題」→ `queries/` を確認
+  - 「表示データの問題」→ `composables/` を確認
+- **使い回しやすい**: `getHealthApi` や `useHealthQuery` は別の画面でも使える
+- **テストしやすい**: 各層を個別にテストできる
+- **拡張しやすい**: 新しいAPI追加は各フォルダにファイルを1つずつ追加するだけ
 
-**注意**: 現在Piniaストアは実装されておらず、全ての状態管理をTanStack Queryで行っています。
+**💡 現在のシンプル構成**
 
-### アーキテクチャの特徴と利点
+現在はPiniaストア（クライアント状態管理）は使わず、TanStack Queryだけでデータ管理をしています。
+UI状態（ダークモード等）が必要になったらPiniaを追加予定です。
 
-このプロジェクトでは、**TanStack Queryを主軍としたシンプルな状態管理**を実現しています：
+### このプロジェクトのデータ管理の仕組み
 
-**TanStack Query （メインの状態管理）**
+このプロジェクトでは、**4層に分けたデータの流れ**で整理されています：
 
-- APIデータのフェッチング・キャッシング・同期
-- バックグラウンド更新とエラーハンドリング
-- SSR/SSGでのデータハイドレーション
-- Adapterパターンによるデータ変換とビジネスロジックの分離
+**🌐 API通信層（`app/services/`）**
 
-**Pinia （将来的なクライアント状態管理用）**
+- HTTPリクエストの実行
+- レスポンスデータの検証（Zod使用）
+- エラーハンドリングの基礎部分
 
-- 現在は実装されていないが、将来的にUI状態等の管理に使用予定
-- UI状態（ダークモード、サイドバー開閉等）
-- ユーザー設定やローカルデータ
+**📦 データ取得層（`app/queries/`）**
+
+- TanStack Queryによるデータキャッシング
+- バックグラウンド更新の管理
+- ローディング状態やエラー状態の提供
+
+**🔄 データ変換層（`app/composables/`）**
+
+- APIデータを画面表示用に変換
+- コンポーネントが使いやすい形にデータを整形
+- ビジネスロジックの実装
+
+**🖼️ 表示層（components）**
+
+- 整形されたデータを受け取って表示
+- ユーザーインタラクションの処理
+
+**💡 将来の拡張予定**
+
+現在はTanStack Queryだけでデータ管理していますが、UI状態（ダークモード等）が必要になったらPinia（クライアント状態管理）を追加予定です。
 
 ### TanStack Query の設定
 

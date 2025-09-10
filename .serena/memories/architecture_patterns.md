@@ -38,14 +38,16 @@ This project implements a **clear separation of server and client state manageme
 
 ### TanStack Query Pattern (Primary Data Fetching)
 
-- **Query Composables**: Domain-specific query logic (e.g., `useHealthQuery`)
-- **Service Adapters**: Bridge between TanStack Query and API services
+- **Query Layer** (`app/queries/`): Domain-specific query logic (e.g., `useHealthQuery`)
+- **Adapter Composables** (`app/composables/`): Bridge between queries and components, handle data transformation
 - **Centralized Configuration**: Plugin setup with SSR support at `app/plugins/vue-query.ts`
 - **Caching Strategy**: 5-minute stale time, 30-minute garbage collection
+- **Clear Separation**: Query logic isolated from business/presentation logic
 
 ### Composables Pattern (Vue 3 Composition API)
 
-- **Query Composables**: Server state management with TanStack Query
+- **Query Layer** (`app/queries/`): Pure TanStack Query logic without business logic
+- **Adapter Composables** (`app/composables/`): Data transformation and business logic (e.g., `useHealthAdapter`)
 - **Utility Composables**: Shared logic and common functionality
 - **Runtime Composables**: Environment detection (`useRuntime`, `useRenderEnvironment`)
 - **Auto-imports**: Automatic composable discovery and imports
@@ -94,11 +96,12 @@ This project implements a **clear separation of server and client state manageme
 
 ## Integration Points
 
-### TanStack Query ↔ Services
+### Query Layer ↔ Services
 
-- **Query Functions**: Services provide data to TanStack Query
+- **Query Functions**: Services provide data to TanStack Query in Query Layer
 - **Type Validation**: Zod schemas ensure runtime type safety
 - **Error Handling**: Consistent error propagation and handling
+- **Pure Query Logic**: Query layer focuses solely on data fetching and caching
 
 ### Frontend ↔ Backend
 
