@@ -5,12 +5,17 @@ import Title from './Title.vue';
 
 const greetingMessage = 'Hello, Frontend Architect Sample!';
 
-const { healthStatus, healthTimestamp } = useHealth();
+const { isLoading, healthStatusData } = useHealth();
 </script>
 
 <template>
   <div>
     <Title :title="greetingMessage" />
-    <HealthStatusDisplayArea :status="healthStatus" :timestamp="healthTimestamp" />
+    <template v-if="isLoading">
+      <p>Loading...</p>
+    </template>
+    <template v-else>
+      <HealthStatusDisplayArea v-bind="healthStatusData" />
+    </template>
   </div>
 </template>

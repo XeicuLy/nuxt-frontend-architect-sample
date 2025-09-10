@@ -1,11 +1,21 @@
-import { useHealthStore } from '@/store/useHealthStore';
+import { useHealthQuery } from './useHealthQuery';
+
+export interface HealthStatusData {
+  healthStatus: string;
+  healthTimestamp: string;
+}
 
 export const useHealthAdapter = () => {
-  const { healthStatus, healthTimestamp, getHealthData } = useHealthStore();
+  const { healthQuery } = useHealthQuery();
+  const { isLoading, data: healthData, suspense: getHealthData } = healthQuery;
 
-  return {
-    healthStatus,
-    healthTimestamp,
-    getHealthData,
-  };
+  const healthStatus = computed<string>(() => healthData.value?.status ?? '-');
+  const healthTimestamp = computed<string>(() => healthData.value?.timestamp ?? '-');
+
+  const healthStatusData = computed<HealthStatusData>(() => ({
+    healthStatus: healthStatus.value,
+    healthTimestamp: healthTimestamp.value,
+  }));
+
+  return { isLoading, healthStatusData, getHealthData };
 };

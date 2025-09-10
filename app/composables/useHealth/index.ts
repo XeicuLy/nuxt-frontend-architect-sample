@@ -1,8 +1,9 @@
 import { useHealthAdapter } from './useHealthAdapter';
+import { useHealthQuery } from './useHealthQuery';
 
 export const useHealth = () => {
   return {
     ...useHealthAdapter(),
-    // NOTE: 今後composablesのロジックが増えた場合にここに追加していく
+    ...useHealthQuery(),
   };
 };
