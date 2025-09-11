@@ -110,8 +110,8 @@ sequenceDiagram
 
 以下の環境が必要です：
 
-- **Node.js** v24.7.0 以上
-- **pnpm** v10.15.0 以上（推奨）
+- **Node.js** v22.16.0 以上
+- **pnpm** v10.15.1 以上（推奨）
 
 > このプロジェクトでは[Volta](https://volta.sh/)で Node.js と pnpm のバージョン管理をしています。
 

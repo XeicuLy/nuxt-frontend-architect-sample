@@ -39,7 +39,7 @@ This is a **Nuxt 4 + Hono + TanStack Query フルスタック サンプル** pro
 
 ### Node.js Environment
 
-- Node.js v22.19.0 (managed by Volta)
+- Node.js v22.16.0 (managed by Volta)
 - pnpm v10.15.1 (managed by Volta)
 
 ## Architecture Highlights
