@@ -51,32 +51,57 @@
 
 ```mermaid
 sequenceDiagram
-  participant U as User
-  participant C as Page/Component (Index.vue)
-  participant H as useHealth (composite)
-  participant A as useHealthAdapter
-  participant Q as useHealthQuery
-  participant VQ as TanStack Vue Query
-  participant S as getHealthApi (Service)
-  participant API as /api/health
-  participant Z as Zod
+  participant U as 👤 User
+  participant IP as 📄 IndexPage<br/>(app/pages/index.vue)
+  participant IC as 🎨 IndexComponent<br/>(app/components/index/Index.vue)
+  participant H as 🔗 useHealth<br/>(app/composables/useHealth/index.ts)
+  participant A as 🔄 useHealthAdapter<br/>(app/composables/useHealth/useHealthAdapter.ts)
+  participant Q as 📡 useHealthQuery<br/>(app/queries/useHealthQuery.ts)
+  participant VQ as ⚡ TanStack Vue Query<br/>(キャッシュ管理)
+  participant S as 🌐 getHealthApi<br/>(app/services/health.ts)
+  participant API as 🖥️ /api/health<br/>(server/api/routes/health.ts)
+  participant Z as ✅ Zod Schema<br/>(shared/types/api/zod.gen.ts)
 
-  U->>C: ページ表示
-  C->>H: useHealth()
-  H->>A: useHealthAdapter()
-  A->>Q: useHealthQuery()
-  Q->>VQ: useQuery(key=['health'], queryFn)
-  VQ->>S: queryFn → getHealthApi()
-  S->>API: GET /api/health
-  API-->>S: JSON
-  S->>Z: zGetApiHealthResponse.parse(JSON)
-  Z-->>S: validated data
-  S-->>VQ: return data
-  VQ-->>Q: healthQuery { data, isLoading, ...}
-  Q-->>A: healthQuery
-  A-->>H: { isLoading, healthStatusData, getHealthData }
-  H-->>C: 表示用データ
-  C-->>U: UI更新 / Loading 切替
+  note over U, Z: 🚀 Phase 1: 初期化フェーズ（ページ読み込み時）
+  U->>IP: ページアクセス
+  IP->>H: useHealth() - データ取得用関数を取得
+  H->>A: useHealthAdapter() - アダプター経由でアクセス
+  A->>Q: useHealthQuery() - TanStack Queryセットアップ
+  Q->>VQ: useQuery({queryKey: ['health'], queryFn: getHealthApi})
+  IP->>H: getHealthData() - 実際のデータ取得実行
+  H->>A: getHealthData() - アダプター経由で実行
+  A->>VQ: suspense() - TanStack Queryでデータ取得
+  VQ->>S: queryFn実行 → getHealthApi()
+  S->>API: $fetch('/api/health', {method: 'GET'})
+  API-->>S: {status: 'ok', timestamp: '2024-01-01T...'}
+  S->>Z: zGetApiHealthResponse.parse(response)
+  note over Z: 📋 JSONデータをZodスキーマで検証
+  Z-->>S: 検証済みデータ
+  S-->>VQ: Promise resolved with validated data
+  VQ-->>A: データ取得完了
+  A-->>H: データ準備完了
+  H-->>IP: 初期化完了
+
+  note over U, Z: 🎨 Phase 2: 表示フェーズ（コンポーネント描画）
+  IP->>IC: <Index /> - コンポーネント描画開始
+  IC->>H: useHealth() - 表示用データ取得
+  H->>A: useHealthAdapter() - アダプター経由
+  A->>Q: useHealthQuery() - キャッシュされたクエリ取得
+  Q-->>A: healthQuery {data, isLoading, suspense}
+
+  note over A: 🔄 データ変換処理（computed）
+  A->>A: healthStatus = computed(() => data?.status ?? '-')
+  A->>A: healthTimestamp = computed(() => data?.timestamp ?? '-')
+  A->>A: healthStatusData = computed(() => ({healthStatus, healthTimestamp}))
+
+  A-->>H: {isLoading, healthStatusData, getHealthData}
+  H-->>IC: 表示用整形データ
+
+  alt データ読み込み中
+    IC-->>U: "Loading..." 表示
+  else データ読み込み完了
+    IC-->>U: HealthStatus表示 (status: ok, timestamp: ...)
+  end
 ```
 
 ## 🚀 クイックスタート
