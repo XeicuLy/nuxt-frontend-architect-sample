@@ -23,7 +23,8 @@
     "test": "vitest",
     "test:ui": "vitest --ui --coverage",
     "test:coverage": "vitest run --coverage",
-    "generate-types": "openapi-ts && pnpm biome:fix"
+    "generate-types": "openapi-ts && pnpm biome:fix",
+    "sync-versions": "jiti scripts/sync-node-version.ts"
   },
   "dependencies": {
     "@hono/swagger-ui": "0.5.2",
