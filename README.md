@@ -47,6 +47,40 @@
 - **コンポーザブル設計**: 再利用可能なロジックの分離
 - **モダンツールチェーン**: 開発効率を最大化する最新ツール
 
+#### シーケンス図
+
+#### アーキテクチャシーケンス図
+
+```mermaid
+sequenceDiagram
+  participant U as User
+  participant C as Page/Component (Index.vue)
+  participant H as useHealth (composite)
+  participant A as useHealthAdapter
+  participant Q as useHealthQuery
+  participant VQ as TanStack Vue Query
+  participant S as getHealthApi (Service)
+  participant API as /api/health
+  participant Z as Zod
+
+  U->>C: ページ表示
+  C->>H: useHealth()
+  H->>A: useHealthAdapter()
+  A->>Q: useHealthQuery()
+  Q->>VQ: useQuery(key=['health'], queryFn)
+  VQ->>S: queryFn → getHealthApi()
+  S->>API: GET /api/health
+  API-->>S: JSON
+  S->>Z: zGetApiHealthResponse.parse(JSON)
+  Z-->>S: validated data
+  S-->>VQ: return data
+  VQ-->>Q: healthQuery { data, isLoading, ...}
+  Q-->>A: healthQuery
+  A-->>H: { isLoading, healthStatusData, getHealthData }
+  H-->>C: 表示用データ
+  C-->>U: UI更新 / Loading 切替
+```
+
 ## 🚀 クイックスタート
 
 ### 前提条件
