@@ -8,7 +8,7 @@ defineProps<Props>();
 
 <template>
   <ul>
-    <li data-testid="status-display-aria">status: {{ healthStatus }}</li>
-    <li data-testid="timestamp-display-aria">timestamp: {{ healthTimestamp }}</li>
+    <li data-testid="status-display-area">status: {{ healthStatus }}</li>
+    <li data-testid="timestamp-display-area">timestamp: {{ healthTimestamp }}</li>
   </ul>
 </template>
