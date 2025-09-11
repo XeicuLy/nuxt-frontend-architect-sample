@@ -64,7 +64,7 @@
     "vue-tsc": "3.0.6"
   },
   "engines": {
-    "node": ">=22.19.0"
+    "node": ">=22.16.0"
   },
   "packageManager": "pnpm@10.15.1",
   "volta": {

@@ -37,11 +37,12 @@
 
 - `app/` - Nuxt application code
   - `components/` - Vue components
-  - `composables/` - Reusable composition functions
+  - `composables/` - Reusable composition functions (adapters)
+  - `queries/` - TanStack Query layer
   - `layouts/` - Page layouts
   - `pages/` - Route pages
   - `services/` - Business logic services
-  - `store/` - Pinia stores
+  - `store/` - Pinia stores (currently empty)
   - `assets/css/` - Stylesheets
 - `server/` - Backend API code
   - `api/routes/` - API route handlers
@@ -52,7 +53,8 @@
 ### Naming Conventions
 
 - **Components**: PascalCase (e.g., `HealthStatusDisplayArea.vue`)
-- **Composables**: camelCase with `use` prefix (e.g., `useHealth`)
+- **Queries**: camelCase with `use` prefix + `Query` suffix (e.g., `useHealthQuery`)
+- **Composables**: camelCase with `use` prefix (e.g., `useHealth`, `useHealthAdapter`)
 - **Services**: camelCase with Service suffix (e.g., `useHealthService.ts`)
 - **Stores**: camelCase with Store suffix (e.g., `useHealthStore.ts`)
 - **API routes**: kebab-case (e.g., `/api/health`)

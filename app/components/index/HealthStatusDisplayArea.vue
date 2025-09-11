@@ -1,15 +1,14 @@
 <script setup lang="ts">
-interface Props {
-  status: string;
-  timestamp: string;
-}
+import type { HealthStatusData } from '@/composables/useHealth/useHealthAdapter';
+
+type Props = HealthStatusData;
 
 defineProps<Props>();
 </script>
 
 <template>
   <ul>
-    <li data-testid="status-display-aria">status: {{ status }}</li>
-    <li data-testid="timestamp-display-aria">timestamp: {{ timestamp }}</li>
+    <li data-testid="status-display-aria">status: {{ healthStatus }}</li>
+    <li data-testid="timestamp-display-aria">timestamp: {{ healthTimestamp }}</li>
   </ul>
 </template>

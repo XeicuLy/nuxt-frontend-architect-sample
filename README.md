@@ -22,7 +22,7 @@
 - **[TanStack Query](https://tanstack.com/query)** - 強力なデータ同期・キャッシングライブラリ
 - **[TypeScript](https://www.typescriptlang.org/)** - 型安全な開発
 - **[Tailwind CSS](https://tailwindcss.com/)** - ユーティリティファーストCSSフレームワーク
-- **[Pinia](https://pinia.vuejs.org/)** - Vue 3向け状態管理ライブラリ
+- **[Pinia](https://pinia.vuejs.org/)** - Vue 3向けクライアント状態管理ライブラリ（UI状態、ユーザー設定用）
 
 #### バックエンド
 
@@ -42,10 +42,67 @@
 - **モノレポ構成**: フロントエンド、バックエンド、共有型定義を統合管理
 - **API-First開発**: OpenAPI仕様からTypeScript型定義を自動生成
 - **型安全な通信**: フロントエンド⇔バックエンド間の完全な型安全性
-- **効率的なデータ管理**: TanStack QueryによるSSR対応キャッシング・同期機能
+- **効率的なデータ管理**: TanStack Queryによるサーバー状態管理・SSR対応キャッシング・同期機能
 - **高性能API**: Honoによるエッジランタイム対応の軽量で高速なAPI
 - **コンポーザブル設計**: 再利用可能なロジックの分離
 - **モダンツールチェーン**: 開発効率を最大化する最新ツール
+
+#### アーキテクチャシーケンス図
+
+```mermaid
+sequenceDiagram
+  participant U as 👤 User
+  participant IP as 📄 IndexPage<br/>(app/pages/index.vue)
+  participant IC as 🎨 IndexComponent<br/>(app/components/index/Index.vue)
+  participant H as 🔗 useHealth<br/>(app/composables/useHealth/index.ts)
+  participant A as 🔄 useHealthAdapter<br/>(app/composables/useHealth/useHealthAdapter.ts)
+  participant Q as 📡 useHealthQuery<br/>(app/queries/useHealthQuery.ts)
+  participant VQ as ⚡ TanStack Vue Query<br/>(キャッシュ管理)
+  participant S as 🌐 getHealthApi<br/>(app/services/health.ts)
+  participant API as 🖥️ /api/health<br/>(server/api/routes/health.ts)
+  participant Z as ✅ Zod Schema<br/>(shared/types/api/zod.gen.ts)
+
+  note over U, Z: 🚀 Phase 1: 初期化フェーズ（ページ読み込み時）
+  U->>IP: ページアクセス
+  IP->>H: useHealth() - データ取得用関数を取得
+  H->>A: useHealthAdapter() - アダプター経由でアクセス
+  A->>Q: useHealthQuery() - TanStack Queryセットアップ
+  Q->>VQ: useQuery({queryKey: ['health'], queryFn: getHealthApi})
+  IP->>H: getHealthData() - 実際のデータ取得実行
+  H->>A: getHealthData() - アダプター経由で実行
+  A->>VQ: suspense() - TanStack Queryでデータ取得
+  VQ->>S: queryFn実行 → getHealthApi()
+  S->>API: $fetch('/api/health', {method: 'GET'})
+  API-->>S: {status: 'ok', timestamp: '2024-01-01T...'}
+  S->>Z: zGetApiHealthResponse.parse(response)
+  note over Z: 📋 JSONデータをZodスキーマで検証
+  Z-->>S: 検証済みデータ
+  S-->>VQ: Promise resolved with validated data
+  VQ-->>A: データ取得完了
+  A-->>H: データ準備完了
+  H-->>IP: 初期化完了
+
+  note over U, Z: 🎨 Phase 2: 表示フェーズ（コンポーネント描画）
+  IP->>IC: <Index /> - コンポーネント描画開始
+  IC->>H: useHealth() - 表示用データ取得
+  H->>A: useHealthAdapter() - アダプター経由
+  A->>Q: useHealthQuery() - キャッシュされたクエリ取得
+  Q-->>A: healthQuery {data, isLoading, suspense}
+
+  note over A: 🔄 データ変換処理（computed）
+  A->>A: healthStatus = computed(() => data?.status ?? '-')
+  A->>A: healthTimestamp = computed(() => data?.timestamp ?? '-')
+  A->>A: healthStatusData = computed(() => ({healthStatus, healthTimestamp}))
+
+  A-->>H: {isLoading, healthStatusData, getHealthData}
+  H-->>IC: 表示用整形データ
+
+  alt データ読み込み中
+    IC-->>U: "Loading..." 表示
+  else データ読み込み完了
+    IC-->>U: HealthStatus表示 (status: ok, timestamp: ...)
+  end
+```
 
 ## 🚀 クイックスタート
 
@@ -87,21 +144,28 @@
 ## 📁 プロジェクト構造
 
 ```
-├── app/                      # Nuxtアプリケーション
-│   ├── components/           # Vueコンポーネント
-│   ├── composables/          # 再利用可能なコンポジション関数
-│   ├── layouts/              # ページレイアウト
-│   ├── pages/                # ルートページ (ファイルベースルーティング)
-│   ├── services/             # ビジネスロジック・API通信
-│   ├── store/                # Pinia状態管理
-│   └── assets/css/           # スタイルシート
-├── server/                   # バックエンドAPI
+├── app/                           # Nuxtアプリケーション
+│   ├── components/                # Vueコンポーネント
+│   │   └── index/                 # インデックスページ用コンポーネント
+│   ├── composables/               # 再利用可能なコンポジション関数（アダプター）
+│   │   ├── common/                # 共通ユーティリティ
+│   │   └── useHealth/             # ヘルスチェック機能アダプター
+│   ├── queries/                   # TanStack Query層
+│   │   └── useHealthQuery.ts      # ヘルスチェック用クエリ
+│   ├── layouts/                   # ページレイアウト
+│   ├── pages/                     # ルートページ (ファイルベースルーティング)
+│   ├── services/                  # API通信・ビジネスロジック
+│   ├── plugins/                   # Nuxtプラグイン (TanStack Query設定)
+│   ├── helpers/test/              # テストヘルパー
+│   ├── types/                     # 型定義
+│   └── assets/css/                # スタイルシート
+├── server/                        # バックエンドAPI
 │   └── api/
-│       ├── routes/           # API ルートハンドラー
-│       └── schema/           # Zodスキーマ定義
-├── shared/                   # 共有リソース
-│   └── types/api/            # 自動生成された型定義とZodスキーマ
-└── public/                   # 静的ファイル
+│       ├── routes/                # API ルートハンドラー
+│       └── schema/                # Zodスキーマ定義
+├── shared/                        # 共有リソース
+│   └── types/api/                 # 自動生成された型定義とZodスキーマ
+└── public/                        # 静的ファイル
 ```
 
 ### 主要ファイルの役割
@@ -176,101 +240,215 @@ shared/types/api/
 
 ### 使用例
 
-#### 1. 基本的な型の使用（現在のコード例）
+#### 1. サービス層でのAPI通信とバリデーション（現在の実装）
 
 ```typescript
-// services/useHealthService.ts
-import type { GetApiHealthResponse } from '#shared/types/api';
-
-export const useHealthService = () => {
-  const getHealthApi = async () => {
-    const { data } = await useFetch<GetApiHealthResponse>('/api/health', {
-      method: 'GET',
-    });
-    return data.value;
-  };
-
-  return { getHealthApi };
-};
-```
-
-#### 2. Zodスキーマを使ったランタイムバリデーション
-
-```typescript
-// services/useHealthServiceWithValidation.ts
-import { zGetApiHealthResponse } from '#shared/types/api';
-
-export const useHealthServiceWithValidation = () => {
-  const getHealthApi = async () => {
-    const response = await $fetch('/api/health');
-
-    // APIレスポンスをZodスキーマで検証
-    const validatedData = zGetApiHealthResponse.parse(response);
-
-    return validatedData;
-  };
-
-  return { getHealthApi };
-};
-```
-
-#### 3. TanStack Query を使ったリアクティブなデータフェッチ（推奨）
-
-```typescript
-// services/useHealthService.ts
-import { useQuery } from '@tanstack/vue-query';
+// app/services/health.ts
 import { type GetApiHealthResponse, zGetApiHealthResponse } from '#shared/types/api';
 
-export const useHealthService = () => {
-  const getHealthApi = async (): Promise<GetApiHealthResponse> => {
-    const response = await $fetch<GetApiHealthResponse>('/api/health');
-    return zGetApiHealthResponse.parse(response); // Zodでランタイム検証
-  };
-
-  const healthQuery = useQuery({
-    queryKey: ['health'],
-    queryFn: getHealthApi,
+export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
+  const response = await $fetch<GetApiHealthResponse>('/api/health', {
+    method: 'GET',
   });
+  return zGetApiHealthResponse.parse(response); // Zodバリデーション
+};
+```
 
+#### 2. データフローの仕組み（現在の実装）
+
+このプロジェクトでは、**API→コンポーネント**へのデータの流れを4つの層に分けて整理しています。
+
+**🔍 なぜ分ける？**
+
+- 各層の責任がはっきりする
+- 問題の原因を特定しやすい
+- コードの再利用がしやすい
+- テストが書きやすくなる
+
+**📋 データの流れ**
+
+1. **API通信** (`app/services/`) - HTTPリクエスト＋データ検証
+2. **データ取得** (`app/queries/`) - TanStack Queryでキャッシングと状態管理
+3. **データ整形** (`app/composables/`) - 画面表示用にデータを加工
+4. **表示** (コンポーネント) - 整形されたデータを表示
+
+```typescript
+// 1️⃣ API通信 (app/services/health.ts)
+// HTTP通信とZodによるデータ検証
+export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
+  const response = await $fetch<GetApiHealthResponse>('/api/health', {
+    method: 'GET',
+  });
+  return zGetApiHealthResponse.parse(response); // データ検証
+};
+
+// 2️⃣ データ取得 (app/queries/useHealthQuery.ts)
+// TanStack Queryでキャッシングと再取得の管理
+export const useHealthQuery = () => {
+  const healthQuery = useQuery({
+    queryKey: ['health'] as const,
+    queryFn: getHealthApi, // ①で定義した関数を使用
+  });
+  return { healthQuery };
+};
+
+// 3️⃣ データ整形 (app/composables/useHealth/useHealthAdapter.ts)
+// APIデータを画面表示用に変換
+export const useHealthAdapter = () => {
+  const { healthQuery } = useHealthQuery(); // ②から受け取り
+  const { isLoading, data, suspense: getHealthData } = healthQuery;
+
+  // 画面表示用にデータを整形
+  const healthStatusData = computed(() => ({
+    healthStatus: data.value?.status ?? '-', // 生データを表示用に変換
+    healthTimestamp: data.value?.timestamp ?? '-',
+  }));
+
+  return { isLoading, healthStatusData, getHealthData };
+};
+
+// 4️⃣ コンポーネント用の入り口 (app/composables/useHealth/index.ts)
+export const useHealth = () => {
   return {
-    healthQuery, // { data, error, isLoading, refetch, ... }
+    ...useHealthAdapter(), // ③で整形されたデータを提供
   };
 };
+```
+
+#### 3. コンポーネントでの使用例（現在の実装）
+
+```vue
+<!-- app/pages/index.vue -->
+<script setup lang="ts">
+import Index from '@/components/index/Index.vue';
+import { useRenderEnvironment } from '@/composables/common/useRenderEnvironment';
+import { useHealth } from '@/composables/useHealth';
+
+const indexPageId = useId();
+const { isInitialClientRender } = useRenderEnvironment();
+const { getHealthData } = useHealth();
+
+const handleInit = async () => {
+  if (isInitialClientRender.value) {
+    return;
+  }
+  await getHealthData();
+};
+
+await handleInit();
+</script>
+
+<template>
+  <section :id="indexPageId">
+    <Index />
+  </section>
+</template>
 ```
 
 ```vue
-<!-- pages/index.vue -->
+<!-- app/components/index/Index.vue -->
+<script setup lang="ts">
+import { useHealth } from '@/composables/useHealth';
+import HealthStatusDisplayArea from './HealthStatusDisplayArea.vue';
+import Title from './Title.vue';
+
+const greetingMessage = 'Hello, Frontend Architect Sample!';
+const { isLoading, healthStatusData } = useHealth();
+</script>
+
 <template>
   <div>
-    <div v-if="healthQuery.isLoading.value">読み込み中...</div>
-    <div v-else-if="healthQuery.error.value">エラー: {{ healthQuery.error.value }}</div>
-    <div v-else>
-      <h2>API Status: {{ healthQuery.data.value?.status }}</h2>
-      <p>Timestamp: {{ healthQuery.data.value?.timestamp }}</p>
-      <button @click="healthQuery.refetch()">再取得</button>
-    </div>
+    <Title :title="greetingMessage" />
+    <template v-if="isLoading">
+      <p>Loading...</p>
+    </template>
+    <template v-else>
+      <HealthStatusDisplayArea v-bind="healthStatusData" />
+    </template>
   </div>
 </template>
-
-<script setup lang="ts">
-const { healthQuery } = useHealthService();
-</script>
 ```
 
-#### 4. セーフパース（エラーハンドリング付き）
+```vue
+<!-- app/components/index/HealthStatusDisplayArea.vue -->
+<script setup lang="ts">
+import type { HealthStatusData } from '@/composables/useHealth/useHealthAdapter';
+
+type Props = HealthStatusData;
+defineProps<Props>();
+</script>
+
+<template>
+  <ul>
+    <li>status: {{ healthStatus }}</li>
+    <li>timestamp: {{ healthTimestamp }}</li>
+  </ul>
+</template>
+```
+
+#### 4. この構成の利点
+
+**🎯 各層の責任がはっきり分かれている**
 
 ```typescript
-import { zGetApiHealthResponse } from '#shared/types/api';
+// ❌ もしも全部まとめて書いたら...
+const useHealth = () => {
+  // HTTP通信、エラーハンドリング、キャッシング、データ変換が混在
+  // 100行を超える複雑なコードになる😵
+};
 
-const response = await $fetch('/api/health');
-const result = zGetApiHealthResponse.safeParse(response);
-
-if (result.success) {
-  console.log('有効なデータ:', result.data);
-} else {
-  console.error('バリデーションエラー:', result.error);
-}
+// ✅ 実際の実装: 責任ごとに4層に分離
+const getHealthApi = () => $fetch('/api/health'); // HTTP通信だけ
+const useHealthQuery = () => useQuery({ queryFn: getHealthApi }); // キャッシング管理だけ
+const useHealthAdapter = () => ({ healthStatusData }); // データ変換だけ
+const useHealth = () => useHealthAdapter(); // 最終的な窓口
 ```
+
+**📈 こんな良いことがある**
+
+- **問題を見つけやすい**:
+  - 「通信エラー」→ `services/` を確認
+  - 「キャッシュの問題」→ `queries/` を確認
+  - 「表示データの問題」→ `composables/` を確認
+- **使い回しやすい**: `getHealthApi` や `useHealthQuery` は別の画面でも使える
+- **テストしやすい**: 各層を個別にテストできる
+- **拡張しやすい**: 新しいAPI追加は各フォルダにファイルを1つずつ追加するだけ
+
+**💡 現在のシンプル構成**
+
+現在はPiniaストア（クライアント状態管理）は使わず、TanStack Queryだけでデータ管理をしています。
+UI状態（ダークモード等）が必要になったらPiniaを追加予定です。
+
+### このプロジェクトのデータ管理の仕組み
+
+このプロジェクトでは、**4層に分けたデータの流れ**で整理されています：
+
+**🌐 API通信層（`app/services/`）**
+
+- HTTPリクエストの実行
+- レスポンスデータの検証（Zod使用）
+- エラーハンドリングの基礎部分
+
+**📦 データ取得層（`app/queries/`）**
+
+- TanStack Queryによるデータキャッシング
+- バックグラウンド更新の管理
+- ローディング状態やエラー状態の提供
+
+**🔄 データ変換層（`app/composables/`）**
+
+- APIデータを画面表示用に変換
+- コンポーネントが使いやすい形にデータを整形
+- ビジネスロジックの実装
+
+**🖼️ 表示層（components）**
+
+- 整形されたデータを受け取って表示
+- ユーザーインタラクションの処理
+
+**💡 将来の拡張予定**
+
+現在はTanStack Queryだけでデータ管理していますが、UI状態（ダークモード等）が必要になったらPinia（クライアント状態管理）を追加予定です。
 
 ### TanStack Query の設定
 
