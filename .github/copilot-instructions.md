@@ -1,17 +1,59 @@
-# コミットメッセージ規約
+# GitHub Copilot インストラクション
 
-## 1. 基本構造
+Nuxt.js + Vue.js + TypeScript を使用したフルスタック Web アプリケーション
+
+## 📚 詳細ドキュメント
+
+プロジェクトの詳細情報は以下を参照：
+
+- **[README.md](../README.md)**: プロジェクト概要、技術スタック、使用方法
+- **[.serena/memories/code_style_conventions.md](../.serena/memories/code_style_conventions.md)**: コードスタイル詳細
+- **[.serena/memories/architecture_patterns.md](../.serena/memories/architecture_patterns.md)**: アーキテクチャパターン
+
+## 🎯 実装時の重要な規約
+
+### コード品質
+
+- **インデント**: 2スペース、**行幅**: 120文字、**クォート**: シングル
+- リント: `pnpm lint` でESLint + Biome + TailwindCSSチェック
+- 型チェック: `pnpm typecheck` で検証必須
+
+### 命名規約
+
+- **Vueコンポーネント**: PascalCase (`HealthStatusDisplayArea.vue`)
+- **コンポーザブル**: `use` + camelCase (`useHealth.ts`)
+- **API関数**: camelCase + `Api` (`getHealthApi`)
+- **テスト**: `*.spec.ts` または `*.nuxt.spec.ts`
+
+### アーキテクチャ
+
+**4層レイヤード構成**:
+1. Services (`app/services/`) → API通信 + Zodバリデーション
+2. Queries (`app/queries/`) → TanStack Query でキャッシング
+3. Composables (`app/composables/`) → ビジネスロジック + データ変換
+4. Components → 表示
+
+### テストパターン
+
+- `describe` は日本語でファイル名記述
+- テスト名も日本語
+- `data-testid` でDOM要素特定
+- `mountComponent` ヘルパー使用
+
+## コミットメッセージ規約
+
+### 基本構造
 
 `<gitmoji> <type>: <message> (<#issue number>)`
 
-## 2. 例
+### 例
 
 - ✨ feat: xx 機能を追加
 - 🐛 fix: ユーザー登録時のバグを修正
 - 🔧 chore: CI の設定を変更
 - 📝 docs: コミットメッセージ規約を追加 (#52)
 
-## 3. タイプの一覧
+### タイプの一覧
 
 [gitmoji.dev](https://gitmoji.dev/)
 
@@ -29,13 +71,12 @@
 - 🔥 : 不要なコードやファイルの削除
 - 🚨 : linterの警告の修正
 - 🎨 : コードの構造/形式の改善
-- 🔥 : コードやファイルの削除
 - ♿️ : アクセシビリティの改善
 - 🏷️ : タグの追加/更新
 
 など
 
-## 4. 注意点
+### 注意点
 
 - コミットメッセージは日本語で記述すること
 - メッセージは簡潔に、何をしたのかを明確にすること
