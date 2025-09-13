@@ -28,6 +28,7 @@ Nuxt.js + Vue.js + TypeScript を使用したフルスタック Web アプリケ
 ### アーキテクチャ
 
 **4層レイヤード構成**:
+
 1. Services (`app/services/`) → API通信 + Zodバリデーション
 2. Queries (`app/queries/`) → TanStack Query でキャッシング
 3. Composables (`app/composables/`) → ビジネスロジック + データ変換
