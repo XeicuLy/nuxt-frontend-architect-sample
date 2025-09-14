@@ -25,7 +25,7 @@
     "test:coverage": "vitest run --coverage",
     "generate-types": "openapi-ts && pnpm biome:fix",
     "sync-versions": "jiti scripts/sync-node-version.ts",
-    "prepare": "husky"
+    "prepare": "jiti .husky/install.mts"
   },
   "dependencies": {
     "@hono/swagger-ui": "0.5.2",
@@ -59,6 +59,7 @@
     "globals": "16.3.0",
     "happy-dom": "17.6.3",
     "husky": "9.1.7",
+    "jiti": "2.5.1",
     "nuxt": "4.1.1",
     "pinia": "3.0.3",
     "prettier": "3.6.2",
