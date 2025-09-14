@@ -89,6 +89,10 @@ function updateFile(
   const oldValue = match?.[0];
   const replacement = target.replacement(version);
 
+  if (!match) {
+    throw new Error(`Pattern not found for "${target.description}" in ${target.file}`);
+  }
+
   const updatedContent = content.replace(target.pattern, replacement);
 
   if (content === updatedContent) {
