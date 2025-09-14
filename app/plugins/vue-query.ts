@@ -25,7 +25,7 @@ export default defineNuxtPlugin((nuxtApp) => {
     },
   });
 
-  const options: VueQueryPluginOptions = { queryClient };
+  const options: VueQueryPluginOptions = { queryClient, enableDevtoolsV6Plugin: true };
 
   nuxtApp.vueApp.use(VueQueryPlugin, options);
 
