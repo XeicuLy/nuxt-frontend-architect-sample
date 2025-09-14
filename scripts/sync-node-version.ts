@@ -76,7 +76,12 @@ function getBaseNodeVersion(rootDir = process.cwd()): string {
 }
 
 // ファイルを安全に更新（変更があった場合のみ書き込み）
-function updateFile(rootDir: string, target: SyncTarget, version: string, options: { dryRun?: boolean } = {}): SyncResult {
+function updateFile(
+  rootDir: string,
+  target: SyncTarget,
+  version: string,
+  options: { dryRun?: boolean } = {},
+): SyncResult {
   const fullPath = join(rootDir, target.file);
   const content = readFile(fullPath);
 
@@ -109,7 +114,12 @@ function updateFile(rootDir: string, target: SyncTarget, version: string, option
 }
 
 // すべてのターゲットファイルを同期
-function syncAllTargets(rootDir: string, targets: SyncTarget[], version: string, options: { dryRun?: boolean } = {}): SyncResult[] {
+function syncAllTargets(
+  rootDir: string,
+  targets: SyncTarget[],
+  version: string,
+  options: { dryRun?: boolean } = {},
+): SyncResult[] {
   return targets.map((target) => updateFile(rootDir, target, version, options));
 }
 
@@ -160,7 +170,7 @@ async function main(): Promise<void> {
   try {
     // CLIオプションの解析
     const dryRun = process.argv.includes('--dry-run') || process.argv.includes('-n');
-    
+
     const rootDir = process.cwd();
     const baseVersion = getBaseNodeVersion(rootDir);
     const targets = createSyncTargets();
