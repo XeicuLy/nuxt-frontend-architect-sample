@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import { useHealth } from '@/composables/useHealth';
-
-const { input, updateInput } = useHealth();
-
-const sampleInput = computed({
-  get: () => input.value,
-  set: (value: string) => updateInput(value),
-});
+const sampleInput = defineModel<string>('sampleInput');
 </script>
 
 <template>

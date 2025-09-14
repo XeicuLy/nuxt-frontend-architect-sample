@@ -6,7 +6,7 @@ import Input from './Input.vue';
 
 const greetingMessage = 'Hello, Frontend Architect Sample!';
 
-const { isLoading, healthStatusData } = useHealth();
+const { isLoading, healthStatusData, sampleInput } = useHealth();
 </script>
 
 <template>
@@ -18,7 +18,7 @@ const { isLoading, healthStatusData } = useHealth();
     <template v-else>
       <HealthStatusDisplayArea v-bind="healthStatusData" />
       <div class="mt-4">
-        <Input />
+        <Input v-model:sample-input.lazy="sampleInput" />
       </div>
     </template>
   </div>
