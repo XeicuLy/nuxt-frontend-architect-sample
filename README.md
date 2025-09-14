@@ -22,7 +22,7 @@
 - **[TanStack Query](https://tanstack.com/query)** - 強力なデータ同期・キャッシングライブラリ
 - **[TypeScript](https://www.typescriptlang.org/)** - 型安全な開発
 - **[Tailwind CSS](https://tailwindcss.com/)** - ユーティリティファーストCSSフレームワーク
-- **[Pinia](https://pinia.vuejs.org/)** - Vue 3向けクライアント状態管理ライブラリ（UI状態、ユーザー設定用）
+- **[Pinia](https://pinia.vuejs.org/)** - Vue 3向けクライアント状態管理ライブラリ（UI状態、ユーザー入力、ローカルデータ用）
 
 #### バックエンド
 
@@ -42,7 +42,7 @@
 - **モノレポ構成**: フロントエンド、バックエンド、共有型定義を統合管理
 - **API-First開発**: OpenAPI仕様からTypeScript型定義を自動生成
 - **型安全な通信**: フロントエンド⇔バックエンド間の完全な型安全性
-- **効率的なデータ管理**: TanStack Queryによるサーバー状態管理・SSR対応キャッシング・同期機能
+- **ハイブリッド状態管理**: TanStack Query（サーバー状態）＋ Pinia（クライアント状態）の分離設計
 - **高性能API**: Honoによるエッジランタイム対応の軽量で高速なAPI
 - **コンポーザブル設計**: 再利用可能なロジックの分離
 - **モダンツールチェーン**: 開発効率を最大化する最新ツール
@@ -152,6 +152,8 @@ sequenceDiagram
 │   │   └── useHealth/             # ヘルスチェック機能アダプター
 │   ├── queries/                   # TanStack Query層
 │   │   └── useHealthQuery.ts      # ヘルスチェック用クエリ
+│   ├── store/                     # Piniaストア（クライアント状態管理）
+│   │   └── health.ts              # ヘルスチェック用クライアント状態
 │   ├── layouts/                   # ページレイアウト
 │   ├── pages/                     # ルートページ (ファイルベースルーティング)
 │   ├── services/                  # API通信・ビジネスロジック
@@ -267,10 +269,17 @@ export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
 
 **📋 データの流れ**
 
+**🌐 サーバー状態（API データ）**
+
 1. **API通信** (`app/services/`) - HTTPリクエスト＋データ検証
 2. **データ取得** (`app/queries/`) - TanStack Queryでキャッシングと状態管理
 3. **データ整形** (`app/composables/`) - 画面表示用にデータを加工
-4. **表示** (コンポーネント) - 整形されたデータを表示
+
+**💻 クライアント状態（ユーザー入力・UI状態）**
+
+1. **ストア定義** (`app/store/`) - Piniaでクライアント状態を管理
+2. **ストア操作** (`app/composables/`) - ストアへのアクセスとデータ変換
+3. **表示** (コンポーネント) - 両方の状態を受け取って表示
 
 ```typescript
 // 1️⃣ API通信 (app/services/health.ts)
@@ -307,10 +316,35 @@ export const useHealthAdapter = () => {
   return { isLoading, healthStatusData, getHealthData };
 };
 
-// 4️⃣ コンポーネント用の入り口 (app/composables/useHealth/index.ts)
+// 4️⃣ クライアント状態管理 (app/store/health.ts)
+// ユーザー入力などのクライアント状態をPiniaで管理
+export const useHealthStore = defineStore('health', () => {
+  const input = ref('');
+  const updateInput = (value: string): void => {
+    input.value = value;
+  };
+  return { input, updateInput };
+});
+
+// 5️⃣ クライアント状態アダプター (app/composables/useHealth/useHealthInput.ts)
+export const useHealthInput = () => {
+  const healthStore = useHealthStore();
+  const { input } = storeToRefs(healthStore);
+  const { updateInput } = healthStore;
+
+  const sampleInput = computed({
+    get: () => input.value,
+    set: (value: string) => updateInput(value),
+  });
+
+  return { sampleInput };
+};
+
+// 6️⃣ コンポーネント用の入り口 (app/composables/useHealth/index.ts)
 export const useHealth = () => {
   return {
-    ...useHealthAdapter(), // ③で整形されたデータを提供
+    ...useHealthAdapter(), // ③サーバー状態（API データ）
+    ...useHealthInput(), // ⑤クライアント状態（ユーザー入力）
   };
 };
 ```
@@ -351,9 +385,12 @@ await handleInit();
 import { useHealth } from '@/composables/useHealth';
 import HealthStatusDisplayArea from './HealthStatusDisplayArea.vue';
 import Title from './Title.vue';
+import Input from './Input.vue';
 
 const greetingMessage = 'Hello, Frontend Architect Sample!';
-const { isLoading, healthStatusData } = useHealth();
+
+// サーバー状態とクライアント状態の両方を取得
+const { isLoading, healthStatusData, sampleInput } = useHealth();
 </script>
 
 <template>
@@ -363,7 +400,12 @@ const { isLoading, healthStatusData } = useHealth();
       <p>Loading...</p>
     </template>
     <template v-else>
+      <!-- サーバー状態の表示 -->
       <HealthStatusDisplayArea v-bind="healthStatusData" />
+      <!-- クライアント状態（ユーザー入力）の表示 -->
+      <div class="mt-4">
+        <Input v-model:sample-input.lazy="sampleInput" />
+      </div>
     </template>
   </div>
 </template>
@@ -386,6 +428,27 @@ defineProps<Props>();
 </template>
 ```
 
+```vue
+<!-- app/components/index/Input.vue -->
+<script setup lang="ts">
+const sampleInput = defineModel<string>('sampleInput');
+</script>
+
+<template>
+  <label for="sample-input">
+    Sample Input:
+    <input
+      id="sample-input"
+      v-model="sampleInput"
+      data-testid="sample-input"
+      type="text"
+      aria-labelledby="sample-input-label"
+      class="border border-black"
+    />
+  </label>
+</template>
+```
+
 #### 4. この構成の利点
 
 **🎯 各層の責任がはっきり分かれている**
@@ -393,15 +456,22 @@ defineProps<Props>();
 ```typescript
 // ❌ もしも全部まとめて書いたら...
 const useHealth = () => {
-  // HTTP通信、エラーハンドリング、キャッシング、データ変換が混在
-  // 100行を超える複雑なコードになる😵
+  // HTTP通信、キャッシング、ユーザー入力、データ変換が混在
+  // 150行を超える複雑なコードになる😵
 };
 
-// ✅ 実際の実装: 責任ごとに4層に分離
+// ✅ 実際の実装: 責任ごとに分離
+// サーバー状態管理
 const getHealthApi = () => $fetch('/api/health'); // HTTP通信だけ
 const useHealthQuery = () => useQuery({ queryFn: getHealthApi }); // キャッシング管理だけ
 const useHealthAdapter = () => ({ healthStatusData }); // データ変換だけ
-const useHealth = () => useHealthAdapter(); // 最終的な窓口
+
+// クライアント状態管理
+const useHealthStore = () => defineStore('health', ...); // ストア定義だけ
+const useHealthInput = () => ({ sampleInput }); // ストア操作だけ
+
+// 統合
+const useHealth = () => ({ ...useHealthAdapter(), ...useHealthInput() }); // 両方を統合
 ```
 
 **📈 こんな良いことがある**
@@ -409,46 +479,46 @@ const useHealth = () => useHealthAdapter(); // 最終的な窓口
 - **問題を見つけやすい**:
   - 「通信エラー」→ `services/` を確認
   - 「キャッシュの問題」→ `queries/` を確認
+  - 「ユーザー入力の問題」→ `store/` を確認
   - 「表示データの問題」→ `composables/` を確認
-- **使い回しやすい**: `getHealthApi` や `useHealthQuery` は別の画面でも使える
-- **テストしやすい**: 各層を個別にテストできる
-- **拡張しやすい**: 新しいAPI追加は各フォルダにファイルを1つずつ追加するだけ
+- **使い回しやすい**: APIクエリ、ストア、アダプターは別の画面でも使える
+- **テストしやすい**: 各層を個別にテストできる（Piniaテスト対応済み）
+- **拡張しやすい**: 新しい機能追加は各フォルダにファイルを1つずつ追加するだけ
 
-**💡 現在のシンプル構成**
+**💡 現在のハイブリッド構成**
 
-現在はPiniaストア（クライアント状態管理）は使わず、TanStack Queryだけでデータ管理をしています。
-UI状態（ダークモード等）が必要になったらPiniaを追加予定です。
+このプロジェクトでは、**サーバー状態とクライアント状態を明確に分離**した設計を採用しています。
+
+- **TanStack Query**: API データの取得・キャッシング・同期
+- **Pinia**: ユーザー入力・UI状態・ローカルデータ
+- **テスト対応**: `@pinia/testing` による Pinia ストアのテストサポート
 
 ### このプロジェクトのデータ管理の仕組み
 
-このプロジェクトでは、**4層に分けたデータの流れ**で整理されています：
+このプロジェクトでは、**サーバー状態とクライアント状態を分離したハイブリッド設計**を採用しています：
 
-**🌐 API通信層（`app/services/`）**
+**🌐 サーバー状態管理（TanStack Query）**
 
-- HTTPリクエストの実行
-- レスポンスデータの検証（Zod使用）
-- エラーハンドリングの基礎部分
+- **API通信層**（`app/services/`）: HTTPリクエスト・レスポンスデータ検証
+- **データ取得層**（`app/queries/`）: キャッシング・バックグラウンド更新・状態管理
+- **データ変換層**（`app/composables/`）: APIデータを画面表示用に変換
 
-**📦 データ取得層（`app/queries/`）**
+**💻 クライアント状態管理（Pinia）**
 
-- TanStack Queryによるデータキャッシング
-- バックグラウンド更新の管理
-- ローディング状態やエラー状態の提供
+- **ストア層**（`app/store/`）: ユーザー入力・UI状態・ローカルデータの管理
+- **ストア操作層**（`app/composables/`）: ストアアクセス・データ変換
+- **テストサポート層**（`app/helpers/test/`）: Piniaテスト用ヘルパー
 
-**🔄 データ変換層（`app/composables/`）**
+**🖼️ 表示層（Components）**
 
-- APIデータを画面表示用に変換
-- コンポーネントが使いやすい形にデータを整形
-- ビジネスロジックの実装
-
-**🖼️ 表示層（components）**
-
-- 整形されたデータを受け取って表示
+- 両方の状態を受け取って統合表示
 - ユーザーインタラクションの処理
 
-**💡 将来の拡張予定**
+**💡 この設計の利点**
 
-現在はTanStack Queryだけでデータ管理していますが、UI状態（ダークモード等）が必要になったらPinia（クライアント状態管理）を追加予定です。
+- **責任の分離**: サーバーデータとクライアントデータの関心事が明確
+- **パフォーマンス最適化**: 各状態に最適化されたライブラリを使用
+- **テスト可能性**: 各状態管理を独立してテストできる
 
 ### TanStack Query の設定
 
