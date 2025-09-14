@@ -119,6 +119,7 @@ describe('app/plugins/vue-query.ts', () => {
     // Vue Queryがアプリケーションに統合されることを確認
     expect(mockVueApp.use).toHaveBeenCalledWith(mockVueQueryPlugin, {
       queryClient: mockQueryClient,
+      enableDevtoolsV6Plugin: true,
     });
   });
 
@@ -284,6 +285,7 @@ describe('app/plugins/vue-query.ts', () => {
       // Vue Queryがアプリケーションに統合されることを確認
       expect(mockVueApp.use).toHaveBeenCalledWith(mockVueQueryPlugin, {
         queryClient: mockQueryClient,
+        enableDevtoolsV6Plugin: true,
       });
 
       // サーバーデータの伝達処理をシミュレート
@@ -310,6 +312,7 @@ describe('app/plugins/vue-query.ts', () => {
       // Vue Queryがアプリケーションに統合されることを確認
       expect(mockVueApp.use).toHaveBeenCalledWith(mockVueQueryPlugin, {
         queryClient: mockQueryClient,
+        enableDevtoolsV6Plugin: true,
       });
 
       // クライアントでのデータ復元処理をシミュレート
