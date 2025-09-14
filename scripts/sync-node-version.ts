@@ -76,7 +76,7 @@ function getBaseNodeVersion(rootDir = process.cwd()): string {
 }
 
 // ファイルを安全に更新（変更があった場合のみ書き込み）
-function updateFile(rootDir: string, target: SyncTarget, version: string): SyncResult {
+function updateFile(rootDir: string, target: SyncTarget, version: string, options: { dryRun?: boolean } = {}): SyncResult {
   const fullPath = join(rootDir, target.file);
   const content = readFile(fullPath);
 
@@ -95,7 +95,10 @@ function updateFile(rootDir: string, target: SyncTarget, version: string): SyncR
     };
   }
 
-  writeFile(fullPath, updatedContent);
+  // dry-runモードでは実際のファイル書き込みをスキップ
+  if (!options.dryRun) {
+    writeFile(fullPath, updatedContent);
+  }
 
   return {
     file: target.file,
@@ -106,23 +109,30 @@ function updateFile(rootDir: string, target: SyncTarget, version: string): SyncR
 }
 
 // すべてのターゲットファイルを同期
-function syncAllTargets(rootDir: string, targets: SyncTarget[], version: string): SyncResult[] {
-  return targets.map((target) => updateFile(rootDir, target, version));
+function syncAllTargets(rootDir: string, targets: SyncTarget[], version: string, options: { dryRun?: boolean } = {}): SyncResult[] {
+  return targets.map((target) => updateFile(rootDir, target, version, options));
 }
 
 // 結果をコンソールに出力
-function logResults(baseVersion: string, results: SyncResult[]): void {
-  consola.box(`📦 Base version from Volta: ${baseVersion}`);
+function logResults(baseVersion: string, results: SyncResult[], dryRun = false): void {
+  const prefix = dryRun ? '[DRY RUN] ' : '';
+  consola.box(`📦 ${prefix}Base version from Volta: ${baseVersion}`);
 
   results.forEach((result) => {
     if (result.updated) {
-      consola.success(`Updated ${result.file}: ${result.oldValue} → ${result.newValue}`);
+      const action = dryRun ? 'Would update' : 'Updated';
+      consola.success(`${action} ${result.file}: ${result.oldValue} → ${result.newValue}`);
     } else {
       consola.info(`${result.file} already synchronized`);
     }
   });
 
-  consola.box('🎉 Node.js version synchronization completed!');
+  if (dryRun) {
+    consola.box('🔍 DRY RUN: No files were modified');
+    consola.info('💡 Run without --dry-run to apply changes');
+  } else {
+    consola.box('🎉 Node.js version synchronization completed!');
+  }
   consola.info(`📋 Synchronized: Volta(${baseVersion}) → CI & README`);
   consola.info('🔧 Note: @types/node maintained independently for patches');
 }
@@ -148,12 +158,15 @@ function createSyncTargets(): SyncTarget[] {
 // メイン処理関数
 async function main(): Promise<void> {
   try {
+    // CLIオプションの解析
+    const dryRun = process.argv.includes('--dry-run') || process.argv.includes('-n');
+    
     const rootDir = process.cwd();
     const baseVersion = getBaseNodeVersion(rootDir);
     const targets = createSyncTargets();
 
-    const results = syncAllTargets(rootDir, targets, baseVersion);
-    logResults(baseVersion, results);
+    const results = syncAllTargets(rootDir, targets, baseVersion, { dryRun });
+    logResults(baseVersion, results, dryRun);
   } catch (error) {
     consola.error('❌ Error during synchronization:', error instanceof Error ? error.message : 'Unknown error');
     process.exit(1);
