@@ -17,5 +17,5 @@ export const useHealthAdapter = () => {
     healthTimestamp: healthTimestamp.value,
   }));
 
-  return { isLoading, healthStatusData, getHealthData };
+  return { isLoading, getHealthData, healthStatusData };
 };
