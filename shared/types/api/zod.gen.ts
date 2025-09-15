@@ -5,7 +5,11 @@ import { z } from 'zod';
 export const zGetApiHealthData = z.object({
   body: z.optional(z.never()),
   path: z.optional(z.never()),
-  query: z.optional(z.never()),
+  query: z.optional(
+    z.object({
+      simulate: z.optional(z.enum(['error', 'timeout'])),
+    }),
+  ),
 });
 
 /**
