@@ -3,9 +3,41 @@
 export type GetApiHealthData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * エラーをシミュレートするためのテストパラメーター。error=SVR_002, timeout=NET_002
+     */
+    simulate?: 'error' | 'timeout';
+  };
   url: '/api/health';
 };
+
+export type GetApiHealthErrors = {
+  /**
+   * タイムアウトエラー（テスト用：?simulate=timeoutで発生）
+   */
+  408: {
+    error: string;
+    /**
+     * カスタムエラーコード（NET_xxx: ネットワーク, SVR_xxx: サーバー, UNK_xxx: 不明）
+     */
+    errorCode: string;
+    timestamp: string;
+  };
+  /**
+   * サーバーエラー（テスト用：?simulate=errorで発生）
+   */
+  500: {
+    error: string;
+    /**
+     * カスタムエラーコード（NET_xxx: ネットワーク, SVR_xxx: サーバー, UNK_xxx: 不明）
+     */
+    errorCode: string;
+    timestamp: string;
+  };
+};
+
+export type GetApiHealthError = GetApiHealthErrors[keyof GetApiHealthErrors];
 
 export type GetApiHealthResponses = {
   /**
