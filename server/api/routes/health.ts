@@ -1,4 +1,5 @@
 import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
+import { HTTP_STATUS } from '#shared/constants/httpStatus';
 import { healthErrorSchema, healthQuerySchema, healthResponseSchema } from '../schema/health';
 
 const healthRoute = createRoute({
@@ -12,19 +13,19 @@ const healthRoute = createRoute({
     query: healthQuerySchema,
   },
   responses: {
-    200: {
+    [HTTP_STATUS.OK]: {
       content: {
         'application/json': { schema: healthResponseSchema },
       },
       description: 'システムの稼働状況とISO形式のタイムスタンプを含むJSONオブジェクトを返却',
     },
-    408: {
+    [HTTP_STATUS.REQUEST_TIMEOUT]: {
       content: {
         'application/json': { schema: healthErrorSchema },
       },
       description: 'タイムアウトエラー（テスト用：?simulate=timeoutで発生）',
     },
-    500: {
+    [HTTP_STATUS.INTERNAL_SERVER_ERROR]: {
       content: {
         'application/json': { schema: healthErrorSchema },
       },
@@ -45,7 +46,7 @@ export const healthHandler = (app: OpenAPIHono) => {
           errorCode: 'SVR_002', // SERVICE_UNAVAILABLE
           timestamp: new Date().toISOString(),
         },
-        500,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
       );
     }
 
@@ -56,11 +57,11 @@ export const healthHandler = (app: OpenAPIHono) => {
           errorCode: 'NET_002', // TIMEOUT_ERROR
           timestamp: new Date().toISOString(),
         },
-        408, // Request Timeout
+        HTTP_STATUS.REQUEST_TIMEOUT,
       );
     }
 
     // 通常のヘルスチェック成功レスポンス
-    return context.json({ status: 'ok', timestamp: new Date().toISOString() }, 200);
+    return context.json({ status: 'ok', timestamp: new Date().toISOString() }, HTTP_STATUS.OK);
   });
 };

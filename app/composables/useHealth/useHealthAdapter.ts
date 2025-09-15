@@ -7,15 +7,19 @@ export interface HealthStatusData {
 
 export const useHealthAdapter = () => {
   const { healthQuery } = useHealthQuery();
-  const { isLoading, data: healthData, suspense: getHealthData } = healthQuery;
+  const { isLoading, data: healthResult, suspense: getHealthData } = healthQuery;
 
-  const healthStatus = computed<string>(() => healthData.value?.status ?? '-');
-  const healthTimestamp = computed<string>(() => healthData.value?.timestamp ?? '-');
+  // 成功データ用 - 簡潔なmatch処理
+  const healthStatusData = computed<HealthStatusData>(() => {
+    if (!healthResult.value) {
+      return { healthStatus: '-', healthTimestamp: '-' };
+    }
 
-  const healthStatusData = computed<HealthStatusData>(() => ({
-    healthStatus: healthStatus.value,
-    healthTimestamp: healthTimestamp.value,
-  }));
+    return healthResult.value.match(
+      ({ status, timestamp }) => ({ healthStatus: status, healthTimestamp: timestamp }),
+      () => ({ healthStatus: '-', healthTimestamp: '-' }),
+    );
+  });
 
   return { isLoading, getHealthData, healthStatusData };
 };
