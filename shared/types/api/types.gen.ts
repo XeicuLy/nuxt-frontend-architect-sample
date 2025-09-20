@@ -52,5 +52,5 @@ export type GetApiHealthResponses = {
 export type GetApiHealthResponse = GetApiHealthResponses[keyof GetApiHealthResponses];
 
 export type ClientOptions = {
-  baseUrl: 'http://localhost:3000' | (string & {});
+  baseUrl: `${string}://${string}` | (string & {});
 };

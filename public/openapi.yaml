@@ -1,0 +1,123 @@
+{
+  'openapi': '3.0.0',
+  'info': { 'version': '1.0.0', 'title': 'Nuxt Frontend Architect Sample API' },
+  'components': { 'schemas': {}, 'parameters': {} },
+  'paths':
+    {
+      '/api/health':
+        {
+          'get':
+            {
+              'tags': ['System'],
+              'summary': 'Health Check',
+              'description': 'APIサーバーが適切に稼働しているかを確認するためのエンドポイント。?simulate=errorでエラーケースをテスト可能',
+              'parameters':
+                [
+                  {
+                    'schema':
+                      {
+                        'type': 'string',
+                        'enum': ['error', 'timeout'],
+                        'description': 'エラーをシミュレートするためのテストパラメーター。error=SVR_002, timeout=NET_002',
+                        'example': 'error',
+                      },
+                    'required': false,
+                    'description': 'エラーをシミュレートするためのテストパラメーター。error=SVR_002, timeout=NET_002',
+                    'name': 'simulate',
+                    'in': 'query',
+                  },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'システムの稼働状況とISO形式のタイムスタンプを含むJSONオブジェクトを返却',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties':
+                                    {
+                                      'status': { 'type': 'string', 'example': 'ok' },
+                                      'timestamp':
+                                        {
+                                          'type': 'string',
+                                          'format': 'date-time',
+                                          'example': '2025-09-20T00:41:10.674Z',
+                                        },
+                                    },
+                                  'required': ['status', 'timestamp'],
+                                },
+                            },
+                        },
+                    },
+                  '408':
+                    {
+                      'description': 'タイムアウトエラー（テスト用：?simulate=timeoutで発生）',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties':
+                                    {
+                                      'error': { 'type': 'string', 'example': 'Service temporarily unavailable' },
+                                      'errorCode':
+                                        {
+                                          'type': 'string',
+                                          'example': 'SVR_002',
+                                          'description': 'カスタムエラーコード（NET_xxx: ネットワーク, SVR_xxx: サーバー, UNK_xxx: 不明）',
+                                        },
+                                      'timestamp':
+                                        {
+                                          'type': 'string',
+                                          'format': 'date-time',
+                                          'example': '2025-09-20T00:41:10.675Z',
+                                        },
+                                    },
+                                  'required': ['error', 'errorCode', 'timestamp'],
+                                },
+                            },
+                        },
+                    },
+                  '500':
+                    {
+                      'description': 'サーバーエラー（テスト用：?simulate=errorで発生）',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties':
+                                    {
+                                      'error': { 'type': 'string', 'example': 'Service temporarily unavailable' },
+                                      'errorCode':
+                                        {
+                                          'type': 'string',
+                                          'example': 'SVR_002',
+                                          'description': 'カスタムエラーコード（NET_xxx: ネットワーク, SVR_xxx: サーバー, UNK_xxx: 不明）',
+                                        },
+                                      'timestamp':
+                                        {
+                                          'type': 'string',
+                                          'format': 'date-time',
+                                          'example': '2025-09-20T00:41:10.675Z',
+                                        },
+                                    },
+                                  'required': ['error', 'errorCode', 'timestamp'],
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+}
