@@ -6,7 +6,7 @@ import Input from './Input.vue';
 
 const greetingMessage = 'Hello, Frontend Architect Sample!';
 
-const { isLoading, healthStatusData, sampleInput } = useHealth();
+const { isLoading, healthStatusData, sampleInput, error, errorCode } = useHealth();
 </script>
 
 <template>
@@ -14,6 +14,14 @@ const { isLoading, healthStatusData, sampleInput } = useHealth();
     <Title :title="greetingMessage" />
     <template v-if="isLoading">
       <p>Loading...</p>
+    </template>
+    <template v-else-if="error">
+      <div class="text-red-500">
+        <p>Error: {{ error.message }}</p>
+        <template v-if="errorCode">
+          <p>Error Code: {{ errorCode }}</p>
+        </template>
+      </div>
     </template>
     <template v-else>
       <HealthStatusDisplayArea v-bind="healthStatusData" />
