@@ -1,5 +1,5 @@
 import { useHealthQuery } from '@/queries/useHealthQuery';
-import type { ErrorDetail } from '@/types/error';
+import type { HealthErrorDetail } from '@/types/error';
 
 export interface HealthStatusData {
   healthStatus: string;
@@ -21,7 +21,7 @@ export const useHealthAdapter = () => {
   // エラーコードを取得するcomputed
   const errorCode = computed<string | null>(() => {
     if (!error.value) return null;
-    const errorDetail = error.value as ErrorDetail;
+    const errorDetail = error.value as HealthErrorDetail;
     return errorDetail.data?.errorCode ?? null;
   });
 

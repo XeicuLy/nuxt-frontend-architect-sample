@@ -1,6 +1,6 @@
 import consola from 'consola';
 import { type GetApiHealthResponse, zGetApiHealthResponse } from '#shared/types/api';
-import type { ErrorDetail } from '@/types/error';
+import type { HealthErrorDetail } from '@/types/error';
 
 export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
   try {
@@ -11,9 +11,9 @@ export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
     });
     return zGetApiHealthResponse.parse(response);
   } catch (error) {
-    const errorDetail = error as ErrorDetail;
+    const errorDetail = error as HealthErrorDetail;
     consola.error('Error fetching health API:', errorDetail.message);
     consola.error(errorDetail.data.errorCode);
-    throw error;
+    throw errorDetail;
   }
 };
