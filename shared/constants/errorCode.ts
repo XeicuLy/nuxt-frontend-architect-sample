@@ -1,3 +1,5 @@
+import type { GetApiHealthError } from '#shared/types/api';
+
 /**
  * アプリケーション全体で使用するエラータイプ定数
  *
@@ -40,10 +42,7 @@ export const ERROR_TYPES = {
   SYSTEM_ERROR: 'UNK_002', // システムエラー
   PROCESSING_INTERRUPTED: 'UNK_003', // 処理中断
   UNKNOWN_STATE: 'UNK_004', // 不明な状態
-} as const;
-
-// 後方互換性のためのエイリアス（段階的移行用）
-export const ERROR_CODE = ERROR_TYPES;
+} as const satisfies Record<string, GetApiHealthError['errorCode']>;
 
 export type ErrorCode = (typeof ERROR_TYPES)[keyof typeof ERROR_TYPES];
 
@@ -226,4 +225,4 @@ export const ERROR_MAP = {
     CODE: ERROR_TYPES.UNKNOWN_STATE,
     MESSAGE: ERROR_MESSAGES[ERROR_TYPES.UNKNOWN_STATE],
   },
-} as const;
+} as const satisfies Record<string, { CODE: ErrorCode; MESSAGE: (typeof ERROR_MESSAGES)[ErrorCode] }>;
