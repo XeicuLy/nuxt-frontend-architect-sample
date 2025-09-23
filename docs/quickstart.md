@@ -89,7 +89,7 @@ curl "http://localhost:3000/api/health?simulate=timeout"
 ### 型定義の生成
 
 ```bash
-# OpenAPI仕様から型定義を生成
+# OpenAPI仕様から型定義を自動生成（完全自動化）
 pnpm generate-types
 
 # 生成されるファイル確認
