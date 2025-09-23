@@ -1,11 +1,18 @@
 import { swaggerUI } from '@hono/swagger-ui';
 import { OpenAPIHono } from '@hono/zod-openapi';
 import consola from 'consola';
+import { errorHandlerMiddleware, notFoundHandler } from './middleware/errorHandler';
 import { healthHandler } from './routes/health';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 const app = new OpenAPIHono().basePath('/api');
+
+/**
+ * グローバルエラーハンドリングミドルウェアを適用
+ * 予期しないエラーを適切なエラーコード（UNK_xxx等）で返却
+ */
+app.use('*', errorHandlerMiddleware);
 
 /**
  * APIのエンドポイント追加
@@ -27,6 +34,12 @@ if (isDevelopment) {
   consola.info('  Swagger UI: http://localhost:3000/api/swagger');
   consola.info('  OpenAPI Spec: http://localhost:3000/api/openapi.yaml');
 }
+
+/**
+ * 404エラーハンドリング
+ * 存在しないエンドポイントへのアクセス時に適切なエラーコードを返却
+ */
+app.notFound(notFoundHandler);
 
 export default defineEventHandler(async (event) => {
   const webReq = toWebRequest(event);

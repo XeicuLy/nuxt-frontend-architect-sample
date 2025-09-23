@@ -1,20 +1,19 @@
 import consola from 'consola';
-import { err, ok, type Result } from 'neverthrow';
 import { type GetApiHealthResponse, zGetApiHealthResponse } from '#shared/types/api';
+import type { HealthErrorDetail } from '@/types/error';
 
-type HealthResult = Result<GetApiHealthResponse, Error>;
-
-export const getHealthApi = async (): Promise<HealthResult> => {
+export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
   try {
     const response = await $fetch<GetApiHealthResponse>('/api/health', {
       method: 'GET',
       timeout: 5_000,
+      query: { simulate: 'error' },
     });
-    const validatedData = zGetApiHealthResponse.parse(response);
-    return ok(validatedData);
-  } catch (error: unknown) {
-    const errorObj = error instanceof Error ? error : new Error(`Unknown error: ${String(error)}`);
-    consola.error(`[Health Service] API health check failed: ${errorObj.message}`);
-    return err(errorObj);
+    return zGetApiHealthResponse.parse(response);
+  } catch (error) {
+    const healthError = error as HealthErrorDetail;
+    consola.error('Error fetching health API:', healthError.message);
+    consola.error('Error code:', healthError.data.errorCode);
+    throw healthError;
   }
 };

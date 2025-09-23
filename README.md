@@ -45,7 +45,8 @@ pnpm dev
 
 - **アプリ**: http://localhost:3000
 - **API ドキュメント**: http://localhost:3000/api/swagger
-- **型定義生成**: `pnpm generate-types`
+- **OpenAPI仕様**: http://localhost:3000/api/openapi.yaml
+- **型定義生成**: `pnpm generate-types` （開発サーバー起動後）
 
 ## 📚 学習パス
 

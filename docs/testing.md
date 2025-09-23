@@ -95,7 +95,7 @@ describe('Health Store (with helper)', () => {
 pnpm test
 
 # テストをウォッチモードで実行（ファイル変更時に自動実行）
-pnpm test:watch
+pnpm test --watch
 
 # カバレッジ付きでテスト実行
 pnpm test:coverage

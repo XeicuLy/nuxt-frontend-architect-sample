@@ -1,0 +1,226 @@
+{
+  'openapi': '3.0.0',
+  'info': { 'version': '1.0.0', 'title': 'Nuxt Frontend Architect Sample API' },
+  'components': { 'schemas': {}, 'parameters': {} },
+  'paths':
+    {
+      '/api/health':
+        {
+          'get':
+            {
+              'tags': ['System'],
+              'summary': 'Health Check',
+              'description': 'APIサーバーが適切に稼働しているかを確認するためのエンドポイント。?simulate=errorでエラーケースをテスト可能',
+              'parameters':
+                [
+                  {
+                    'schema':
+                      {
+                        'type': 'string',
+                        'enum': ['error', 'timeout'],
+                        'description': 'エラーをシミュレートするためのテストパラメーター。error=SVR_002, timeout=NET_002',
+                        'example': 'error',
+                      },
+                    'required': false,
+                    'description': 'エラーをシミュレートするためのテストパラメーター。error=SVR_002, timeout=NET_002',
+                    'name': 'simulate',
+                    'in': 'query',
+                  },
+                ],
+              'responses':
+                {
+                  '200':
+                    {
+                      'description': 'システムの稼働状況とISO形式のタイムスタンプを含むJSONオブジェクトを返却',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties':
+                                    {
+                                      'status': { 'type': 'string', 'example': 'ok' },
+                                      'timestamp':
+                                        {
+                                          'type': 'string',
+                                          'format': 'date-time',
+                                          'example': '2025-09-23T01:47:39.635Z',
+                                        },
+                                    },
+                                  'required': ['status', 'timestamp'],
+                                },
+                            },
+                        },
+                    },
+                  '408':
+                    {
+                      'description': 'タイムアウトエラー（テスト用：?simulate=timeoutで発生）',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties':
+                                    {
+                                      'error': { 'type': 'string', 'example': 'Service temporarily unavailable' },
+                                      'errorCode':
+                                        {
+                                          'type': 'string',
+                                          'enum':
+                                            [
+                                              'NET_001',
+                                              'NET_002',
+                                              'NET_003',
+                                              'NET_004',
+                                              'SVR_001',
+                                              'SVR_002',
+                                              'SVR_003',
+                                              'SVR_004',
+                                              'SVR_005',
+                                              'VAL_001',
+                                              'VAL_002',
+                                              'VAL_003',
+                                              'VAL_004',
+                                              'AUTH_001',
+                                              'AUTH_002',
+                                              'AUTH_003',
+                                              'AUTH_004',
+                                              'UNK_001',
+                                              'UNK_002',
+                                              'UNK_003',
+                                              'UNK_004',
+                                            ],
+                                          'example': 'SVR_002',
+                                          'description': '統一エラーコード（可読性重視）: NET_xxx(ネットワーク), SVR_xxx(サーバー), VAL_xxx(バリデーション), AUTH_xxx(認証), UNK_xxx(不明)',
+                                        },
+                                      'timestamp':
+                                        {
+                                          'type': 'string',
+                                          'format': 'date-time',
+                                          'example': '2025-09-23T01:47:39.636Z',
+                                        },
+                                    },
+                                  'required': ['error', 'errorCode', 'timestamp'],
+                                },
+                            },
+                        },
+                    },
+                  '500':
+                    {
+                      'description': 'サーバーエラー（テスト用：?simulate=errorで発生）',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties':
+                                    {
+                                      'error': { 'type': 'string', 'example': 'Service temporarily unavailable' },
+                                      'errorCode':
+                                        {
+                                          'type': 'string',
+                                          'enum':
+                                            [
+                                              'NET_001',
+                                              'NET_002',
+                                              'NET_003',
+                                              'NET_004',
+                                              'SVR_001',
+                                              'SVR_002',
+                                              'SVR_003',
+                                              'SVR_004',
+                                              'SVR_005',
+                                              'VAL_001',
+                                              'VAL_002',
+                                              'VAL_003',
+                                              'VAL_004',
+                                              'AUTH_001',
+                                              'AUTH_002',
+                                              'AUTH_003',
+                                              'AUTH_004',
+                                              'UNK_001',
+                                              'UNK_002',
+                                              'UNK_003',
+                                              'UNK_004',
+                                            ],
+                                          'example': 'SVR_002',
+                                          'description': '統一エラーコード（可読性重視）: NET_xxx(ネットワーク), SVR_xxx(サーバー), VAL_xxx(バリデーション), AUTH_xxx(認証), UNK_xxx(不明)',
+                                        },
+                                      'timestamp':
+                                        {
+                                          'type': 'string',
+                                          'format': 'date-time',
+                                          'example': '2025-09-23T01:47:39.636Z',
+                                        },
+                                    },
+                                  'required': ['error', 'errorCode', 'timestamp'],
+                                },
+                            },
+                        },
+                    },
+                  '503':
+                    {
+                      'description': 'サービス利用不可エラー（実際のヘルスチェック失敗時）',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties':
+                                    {
+                                      'error': { 'type': 'string', 'example': 'Service temporarily unavailable' },
+                                      'errorCode':
+                                        {
+                                          'type': 'string',
+                                          'enum':
+                                            [
+                                              'NET_001',
+                                              'NET_002',
+                                              'NET_003',
+                                              'NET_004',
+                                              'SVR_001',
+                                              'SVR_002',
+                                              'SVR_003',
+                                              'SVR_004',
+                                              'SVR_005',
+                                              'VAL_001',
+                                              'VAL_002',
+                                              'VAL_003',
+                                              'VAL_004',
+                                              'AUTH_001',
+                                              'AUTH_002',
+                                              'AUTH_003',
+                                              'AUTH_004',
+                                              'UNK_001',
+                                              'UNK_002',
+                                              'UNK_003',
+                                              'UNK_004',
+                                            ],
+                                          'example': 'SVR_002',
+                                          'description': '統一エラーコード（可読性重視）: NET_xxx(ネットワーク), SVR_xxx(サーバー), VAL_xxx(バリデーション), AUTH_xxx(認証), UNK_xxx(不明)',
+                                        },
+                                      'timestamp':
+                                        {
+                                          'type': 'string',
+                                          'format': 'date-time',
+                                          'example': '2025-09-23T01:47:39.636Z',
+                                        },
+                                    },
+                                  'required': ['error', 'errorCode', 'timestamp'],
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    },
+}

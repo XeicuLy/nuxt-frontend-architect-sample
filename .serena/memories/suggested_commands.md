@@ -1,68 +1,208 @@
-# Suggested Commands
+# Essential Development Commands
 
-## Development Commands
+## 🚀 Development & Execution Commands
 
-### Package Management
-
-```bash
-pnpm install                    # Install dependencies
-```
-
-### Development Server
+### Basic Development
 
 ```bash
-pnpm dev                       # Start development server on http://localhost:3000
-```
-
-### Build Commands
-
-```bash
-pnpm build                     # Build for production
-pnpm preview                   # Preview production build locally
-pnpm generate                  # Generate static site
-```
-
-### Code Quality Commands
-
-```bash
-pnpm lint                      # Run all linting (ESLint + Biome + Prettier + TypeCheck)
-pnpm lint:fix                  # Fix all linting issues automatically
-
-pnpm eslint                    # Run ESLint only
-pnpm eslint:fix               # Fix ESLint issues
-
-pnpm biome                     # Run Biome checker only
-pnpm biome:fix                # Fix Biome issues
-pnpm biome:ci                 # Run Biome in CI mode
-
-pnpm prettier                  # Check Prettier formatting
-pnpm prettier:fix             # Fix Prettier issues
-pnpm prettier:ci              # Check Prettier in CI mode
-
-pnpm typecheck                # Run TypeScript type checking
+pnpm dev              # Start development server (http://localhost:3000)
+pnpm build            # Production build
+pnpm generate         # Static site generation (SSG)
+pnpm preview          # Production preview
 ```
 
 ### API Type Generation
 
 ```bash
-pnpm generate-types           # Generate TypeScript types from OpenAPI spec
-                              # (runs openapi-ts + biome:fix)
+pnpm generate-types   # OpenAPI spec generation → type generation → lint fixes (full execution)
+pnpm generate-types:ci # Type generation only (for CI)
 ```
 
-## Important URLs
+### Access URLs
 
-- Development server: http://localhost:3000
-- API documentation: http://localhost:3000/api/swagger
-- OpenAPI spec: http://localhost:3000/api/openapi.json
+- **App**: http://localhost:3000
+- **API Documentation**: http://localhost:3000/api/swagger
+- **DevTools**: Nuxt DevTools + TanStack Query DevTools + Pinia DevTools
 
-## System Commands (macOS)
+## 🔍 Quality Management Commands
 
-- `ls` - List directory contents
-- `cd` - Change directory
-- `grep` - Search text patterns
-- `find` - Find files and directories
-- `git` - Version control
+### Lint & Format
 
-## Package Manager
+```bash
+# Comprehensive check
+pnpm lint:fix         # ESLint + Biome + Prettier + TypeCheck (full check with auto-fix)
+pnpm lint             # ESLint + Biome + Prettier + TypeCheck (check only)
 
-This project uses **pnpm** as the package manager. All commands should use `pnpm` instead of `npm` or `yarn`.
+# Individual checks
+pnpm eslint           # ESLint check
+pnpm eslint:fix       # ESLint fix
+pnpm biome            # Biome check
+pnpm biome:fix        # Biome fix
+pnpm prettier         # Prettier check
+pnpm prettier:fix     # Prettier fix
+pnpm typecheck        # TypeScript type check
+
+# Format-specific
+pnpm format           # Format check (Prettier + Biome)
+pnpm format:fix       # Format fix (Prettier + Biome)
+```
+
+### CI Commands
+
+```bash
+pnpm biome:ci         # Biome CI check
+pnpm prettier:ci      # Prettier CI check (warning level log)
+pnpm eslint:ci        # ESLint CI check (zero warnings)
+```
+
+## 🧪 Test Commands
+
+```bash
+pnpm test             # Run all tests
+pnpm test:ui          # Vitest UI + coverage
+pnpm test:coverage    # Generate coverage report
+```
+
+### Test File Formats
+
+- **Unit tests**: `*.{test,spec}.ts`
+- **Nuxt tests**: `*.nuxt.{test,spec}.ts`
+
+## 🛠️ System Utilities (macOS)
+
+### File Operations
+
+```bash
+ls -la                # File list (detailed)
+find . -name "*.ts"   # TypeScript file search
+grep -r "pattern" .   # Text search
+```
+
+### Git Operations
+
+```bash
+git status            # Status check
+git add .             # Staging
+git commit -m "msg"   # Commit (Gitmoji conventions)
+git log --oneline     # Commit history
+```
+
+### Process Management
+
+```bash
+ps aux | grep node    # Check Node processes
+lsof -i :3000         # Check processes using port 3000
+kill -9 <PID>         # Force terminate process
+```
+
+## 📦 Package Management
+
+### Dependencies
+
+```bash
+pnpm install          # Install dependencies
+pnpm add <package>    # Add package
+pnpm remove <package> # Remove package
+pnpm update           # Update dependencies
+```
+
+### Environment Management (Volta)
+
+```bash
+volta list            # List installed environments
+volta install node@22.16.0 # Install specific Node.js version
+```
+
+## ⚙️ Project-Specific Operation Commands
+
+### Development Workflow
+
+```bash
+# 1. Update type definitions
+pnpm generate-types
+
+# 2. Start development
+pnpm dev
+
+# 3. Code quality check
+pnpm lint:fix
+
+# 4. Run tests
+pnpm test
+
+# 5. Verify production build
+pnpm build
+```
+
+### Error Handling Testing
+
+```bash
+# Error simulation (after starting development server)
+curl "http://localhost:3000/api/health?simulate=error"
+curl "http://localhost:3000/api/health?simulate=timeout"
+```
+
+## 🔧 Troubleshooting
+
+### Cache Clear
+
+```bash
+rm -rf node_modules .nuxt
+pnpm install
+```
+
+### Type Definition Refresh
+
+```bash
+pnpm generate-types
+pnpm typecheck
+```
+
+### Port Conflict Resolution
+
+```bash
+lsof -i :3000
+kill -9 <PID>
+pnpm dev
+```
+
+## 📊 Performance & Debug
+
+### Coverage Report
+
+```bash
+pnpm test:coverage
+# Output: ../logs/coverage/
+```
+
+### DevTools Usage
+
+- **Nuxt DevTools**: Auto-start (during development)
+- **TanStack Query DevTools**: Browser extension or install
+- **Pinia DevTools**: Use within Vue DevTools
+
+## 📝 Documentation Management
+
+### Auto-generated
+
+- OpenAPI specification: `public/openapi.yaml` (auto-generated)
+- Type definitions: `shared/types/api/` (auto-generated)
+
+### Manual Maintenance
+
+- `docs/`: Detailed documentation
+- `README.md`: Project overview
+
+## 🚨 Task Completion Checklist
+
+1. `pnpm lint:fix` - Code quality check with auto-fix
+2. `pnpm test` - Test pass verification
+3. `pnpm build` - Build success verification
+4. Git commit (when necessary)
+
+### Additional Checks for Error Handling Fixes
+
+1. JSDoc appropriateness verification
+2. Error code system compliance verification
+3. OpenAPI specification synchronization verification
+4. Test execution in Swagger
