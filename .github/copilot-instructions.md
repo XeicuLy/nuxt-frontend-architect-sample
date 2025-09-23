@@ -11,6 +11,7 @@ Nuxt 4 + Hono + TanStack Query フルスタック Web アプリケーション w
 Execute these commands in order for initial setup:
 
 1. **Install Node.js 22.16.0** (REQUIRED - project will fail with other versions):
+
    ```bash
    # Using nvm (recommended)
    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
@@ -18,18 +19,20 @@ Execute these commands in order for initial setup:
    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
    nvm install 22.16.0
    nvm use 22.16.0
-   
+
    # Verify version
    node --version  # Must show v22.16.0
    ```
 
 2. **Install pnpm 10.15.1**:
+
    ```bash
    npm install -g pnpm@10.15.1
    pnpm --version  # Must show 10.15.1
    ```
 
 3. **Install dependencies** - takes ~37 seconds. NEVER CANCEL:
+
    ```bash
    pnpm install
    # Expected time: 36-40 seconds
@@ -37,6 +40,7 @@ Execute these commands in order for initial setup:
    ```
 
 4. **Generate API types** - takes ~15 seconds. NEVER CANCEL:
+
    ```bash
    pnpm generate-types
    # Expected time: 15-20 seconds
@@ -44,6 +48,7 @@ Execute these commands in order for initial setup:
    ```
 
 5. **Run tests** - takes ~10 seconds. NEVER CANCEL:
+
    ```bash
    pnpm test
    # Expected time: 7-12 seconds
@@ -63,6 +68,7 @@ Execute these commands in order for initial setup:
 **ALWAYS run the bootstrapping steps first.**
 
 1. **Start development server**:
+
    ```bash
    pnpm dev
    # Starts in ~1 second
@@ -94,6 +100,7 @@ pnpm preview
 **ALWAYS manually validate** any new code by running through these complete user scenarios:
 
 1. **Health Check Flow**:
+
    ```bash
    # After starting dev server
    curl http://localhost:3000/api/health
@@ -101,11 +108,12 @@ pnpm preview
    ```
 
 2. **API Error Testing**:
+
    ```bash
    # Test error simulation endpoints
    curl "http://localhost:3000/api/health?simulate=error"
    # Expected: {"error":"Service temporarily unavailable for maintenance","errorCode":"SVR_002","timestamp":"..."}
-   
+
    curl "http://localhost:3000/api/health?simulate=timeout"
    # Expected: timeout or specific error response
    ```
@@ -130,7 +138,7 @@ pnpm preview
 pnpm lint:fix
 # Set timeout: 60+ seconds
 
-# 2. Test - takes ~10 seconds. NEVER CANCEL  
+# 2. Test - takes ~10 seconds. NEVER CANCEL
 pnpm test
 # Set timeout: 60+ seconds
 
@@ -140,9 +148,10 @@ pnpm build
 ```
 
 **CI Validation Commands** (used in GitHub Actions):
+
 ```bash
 pnpm biome:ci        # Biome CI check
-pnpm prettier:ci     # Prettier CI check  
+pnpm prettier:ci     # Prettier CI check
 pnpm eslint:ci       # ESLint CI check (zero warnings)
 pnpm typecheck       # TypeScript check
 pnpm test:coverage   # Tests with coverage
@@ -164,8 +173,9 @@ pnpm generate-types:ci
 ```
 
 **Generated files** (do not modify manually):
+
 - `shared/types/api/index.ts`
-- `shared/types/api/types.gen.ts` 
+- `shared/types/api/types.gen.ts`
 - `shared/types/api/zod.gen.ts`
 - `public/openapi.yaml`
 
@@ -183,6 +193,7 @@ pnpm generate-types:ci
 ### Troubleshooting
 
 **Port 3000 already in use**:
+
 ```bash
 lsof -i :3000
 kill -9 <PID>
@@ -190,18 +201,21 @@ pnpm dev
 ```
 
 **Clean install** (if dependencies are corrupted):
+
 ```bash
 rm -rf node_modules .nuxt pnpm-lock.yaml
 pnpm install
 ```
 
 **Type errors after API changes**:
+
 ```bash
 pnpm generate-types
 pnpm typecheck
 ```
 
 **Full environment reset**:
+
 ```bash
 rm -rf node_modules .nuxt
 pnpm install
@@ -231,7 +245,7 @@ The codebase follows a strict 4-layer pattern:
 ```
 ├── app/                    # Nuxt application
 │   ├── store/             # Pinia stores (client state)
-│   ├── queries/           # TanStack Query (server state)  
+│   ├── queries/           # TanStack Query (server state)
 │   ├── composables/       # Unified state interface
 │   ├── services/          # API communication
 │   ├── components/        # Vue components
@@ -263,7 +277,7 @@ The codebase follows a strict 4-layer pattern:
 **These commands take significant time - ALWAYS wait for completion**:
 
 - `pnpm install` - 37+ seconds
-- `pnpm build` - 14+ seconds  
+- `pnpm build` - 14+ seconds
 - `pnpm test` - 10+ seconds
 - `pnpm generate-types` - 15+ seconds
 - `pnpm lint:fix` - 15+ seconds
@@ -297,7 +311,7 @@ pnpm generate-types   # Regenerate API types
 ### Documentation Locations
 
 - **Quickstart**: `docs/quickstart.md`
-- **Architecture**: `docs/architecture.md`  
+- **Architecture**: `docs/architecture.md`
 - **API Integration**: `docs/api-integration.md`
 - **Testing**: `docs/testing.md`
 - **Troubleshooting**: `docs/troubleshooting.md`
