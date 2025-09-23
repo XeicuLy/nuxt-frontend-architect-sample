@@ -1,33 +1,63 @@
-# 🔗 API-First 統合ガイド
+# 🔗 API統合をはじめよう
 
-初学者向けに、このプロジェクトの **API-First** 開発アプローチについて説明します。
+初学者向けに、このプロジェクトの **API-First** 開発について、日常的な例え話で分かりやすく説明します。
 
-## API-First開発とは？
+## 📮 郵便システムに例えるAPI-First開発
 
-### 従来のアプローチ vs API-First
+### API-Firstって何？
 
-```mermaid
-flowchart TB
-  subgraph "❌ 従来のアプローチ"
-    A1[フロントエンド開発] --> A2[バックエンド開発]
-    A2 --> A3[手動で型定義作成]
-    A3 --> A4[型の不整合発見😰]
-  end
+**API-First開発**を郵便システムに例えてみましょう：
 
-  subgraph "✅ API-First アプローチ"
-    B1[OpenAPI仕様定義] --> B2[型定義自動生成]
-    B2 --> B3[フロントエンド開発]
-    B2 --> B4[バックエンド開発]
-    B3 --> B5[型安全な通信🎉]
-    B4 --> B5
-  end
+#### 🤔 従来のやり方（問題あり）
+
+```
+1. 👨‍💻 Aさん: 手紙を書く
+2. 👩‍💻 Bさん: 返事を書く
+3. 😰 問題発生: 「どうやって送ろう？住所の書き方は？」
+4. 🔄 やり直し: 手紙を書き直し
 ```
 
-### 利点
+#### ✅ API-Firstのやり方（スマート）
 
-- **型の一貫性**: フロント・バック間で型定義が自動同期
-- **開発効率**: 手動でのインターフェース作成が不要
-- **ドキュメント**: Swagger UIによる自動ドキュメント生成
+```
+1. 📋 最初に郵便ルールを決める
+   - 住所の書き方
+   - 封筒のサイズ
+   - 切手の種類
+2. 👨‍💻 Aさん: ルールに従って手紙を書く
+3. 👩‍💻 Bさん: 同じルールで返事を書く
+4. 🎉 完璧に届く！
+```
+
+### プログラムで言うと...
+
+**郵便ルール** = **API仕様（OpenAPI）**
+
+- どんなデータを送るか
+- どんな形式で送るか
+- どんな返事が来るか
+
+**手紙** = **フロントエンド・バックエンドのコード**
+
+- API仕様に従って作る
+- お互いが理解できる形式
+
+### なぜAPI-Firstが良いの？
+
+#### 🎯 間違いが減る
+
+- 最初にルールを決めるので、勘違いがない
+- 自動でチェックしてくれる
+
+#### ⚡ 作業が早くなる
+
+- 手動で型を作る必要がない
+- フロントとバックを同時に開発できる
+
+#### 📚 ドキュメントが自動で作られる
+
+- APIの使い方が自動で説明される
+- 新しい人もすぐに理解できる
 
 ## このプロジェクトのAPI実装
 
@@ -38,41 +68,140 @@ flowchart TB
 ```typescript
 // server/api/schema/health.ts（実際のファイル）
 import { z } from '@hono/zod-openapi';
+import { ERROR_TYPES } from '#shared/constants/errorCode';
 
-// 成功時のレスポンススキーマ
+/**
+ * ヘルスチェックAPIのクエリパラメーターバリデーションスキーマ
+ * エラーケースをテストするためのシミュレーション機能を提供
+ */
+export const healthQuerySchema = z.object({
+  simulate: z.enum(['error', 'timeout']).optional().openapi({
+    description: 'エラーをシミュレートするためのテストパラメーター。error=SVR_002, timeout=NET_002',
+    example: 'error',
+  }),
+});
+
+/**
+ * ヘルスチェック成功時のレスポンススキーマ
+ * システムの稼働状況とタイムスタンプを含む
+ */
 export const healthResponseSchema = z.object({
   status: z.string().openapi({ example: 'ok' }),
   timestamp: z.iso.datetime().openapi({ example: new Date().toISOString() }),
 });
 
-// エラー時のレスポンススキーマ（実践的エラーコード対応）
+/**
+ * ヘルスチェックエラー時のレスポンススキーマ
+ * 統一されたエラーコード体系に準拠したエラー情報を提供
+ */
 export const healthErrorSchema = z.object({
   error: z.string().openapi({ example: 'Service temporarily unavailable' }),
-  errorCode: z.string().openapi({
+  errorCode: z.enum(Object.values(ERROR_TYPES)).openapi({
     example: 'SVR_002',
-    description: 'カスタムエラーコード（NET_xxx: ネットワーク, SVR_xxx: サーバー, UNK_xxx: 不明）',
+    description:
+      '統一エラーコード: NET_xxx(ネットワーク), SVR_xxx(サーバー), VAL_xxx(バリデーション), AUTH_xxx(認証), UNK_xxx(不明)',
   }),
   timestamp: z.iso.datetime().openapi({ example: new Date().toISOString() }),
 });
 ```
 
-### API実装
+### 統一エラーコード体系
+
+```typescript
+// shared/constants/errorCode.ts
+export const ERROR_TYPES = {
+  // ネットワーク関連エラー (NET_xxx)
+  CONNECTION_ERROR: 'NET_001', // 接続エラー
+  TIMEOUT_ERROR: 'NET_002', // タイムアウトエラー
+  NETWORK_DISCONNECTED: 'NET_003', // ネットワーク切断
+  DNS_RESOLUTION_ERROR: 'NET_004', // DNS解決エラー
+
+  // サーバー内部エラー (SVR_xxx)
+  INTERNAL_SERVER_ERROR: 'SVR_001', // 内部サーバーエラー
+  SERVICE_UNAVAILABLE: 'SVR_002', // サービス利用不可
+  DATABASE_ERROR: 'SVR_003', // データベースエラー
+  EXTERNAL_API_ERROR: 'SVR_004', // 外部API通信エラー
+  FILE_OPERATION_ERROR: 'SVR_005', // ファイル操作エラー
+
+  // バリデーションエラー (VAL_xxx)
+  VALIDATION_MISSING_PARAMS: 'VAL_001', // 必須パラメータ不足
+  VALIDATION_INVALID_FORMAT: 'VAL_002', // 不正な形式
+  VALIDATION_OUT_OF_RANGE: 'VAL_003', // 値の範囲外
+  VALIDATION_LENGTH_EXCEEDED: 'VAL_004', // 文字数制限超過
+
+  // 認証・認可エラー (AUTH_xxx)
+  AUTH_FAILED: 'AUTH_001', // 認証失敗
+  AUTH_INSUFFICIENT_PERMISSIONS: 'AUTH_002', // 権限不足
+  AUTH_SESSION_EXPIRED: 'AUTH_003', // セッション期限切れ
+  AUTH_ACCESS_DENIED: 'AUTH_004', // アクセス拒否
+
+  // 不明・予期しないエラー (UNK_xxx)
+  UNEXPECTED_ERROR: 'UNK_001', // 予期しないエラー
+  SYSTEM_ERROR: 'UNK_002', // システムエラー
+  PROCESSING_INTERRUPTED: 'UNK_003', // 処理中断
+  UNKNOWN_STATE: 'UNK_004', // 不明な状態
+} as const;
+
+/**
+ * エラーレスポンスを生成するヘルパー関数
+ * @param errorCode - エラーコード
+ * @param customMessage - カスタムエラーメッセージ（省略時はデフォルトメッセージを使用）
+ * @param timestamp - タイムスタンプ（省略時は現在時刻を使用）
+ * @returns エラーレスポンスオブジェクト
+ */
+export const createErrorResponse = (errorCode: ErrorCode, customMessage?: string, timestamp?: string) => ({
+  error: customMessage || ERROR_MESSAGES[errorCode],
+  errorCode,
+  timestamp: timestamp || new Date().toISOString(),
+});
+```
+
+### API実装（エラーハンドリング対応）
 
 ```typescript
 // server/api/routes/health.ts（実際のファイル）
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { healthRoute } from '../schema/health';
+import { createRoute, type OpenAPIHono } from '@hono/zod-openapi';
+import { createErrorResponse, ERROR_TYPES } from '#shared/constants/errorCode';
+import { HTTP_STATUS } from '#shared/constants/httpStatus';
+import { healthErrorSchema, healthQuerySchema, healthResponseSchema } from '../schema/health';
 
-const app = new OpenAPIHono();
+export const healthHandler = (app: OpenAPIHono) => {
+  app.openapi(healthRoute, async (context) => {
+    const { simulate } = context.req.valid('query');
 
-app.openapi(healthRoute, (c) => {
-  return c.json({
-    status: 'ok' as const,
-    timestamp: new Date().toISOString(),
+    // エラーシミュレーション（テスト用）
+    if (simulate === 'error') {
+      const errorResponse = createErrorResponse(
+        ERROR_TYPES.SERVICE_UNAVAILABLE, // サービス利用不可
+        'Service temporarily unavailable for maintenance',
+      );
+      return context.json(errorResponse, HTTP_STATUS.INTERNAL_SERVER_ERROR);
+    }
+
+    if (simulate === 'timeout') {
+      const errorResponse = createErrorResponse(
+        ERROR_TYPES.TIMEOUT_ERROR, // タイムアウトエラー
+        'Health check request timeout occurred',
+      );
+      return context.json(errorResponse, HTTP_STATUS.REQUEST_TIMEOUT);
+    }
+
+    // 実際のヘルスチェック実行
+    try {
+      await performHealthChecks();
+      return context.json({ status: 'ok', timestamp: new Date().toISOString() }, HTTP_STATUS.OK);
+    } catch (error) {
+      // エラーケースに応じた適切なエラーコード返却
+      const errorCode = classifyHealthCheckError(error);
+      const errorResponse = createErrorResponse(errorCode, 'Health check failed');
+      const httpStatus = errorCode.startsWith('SVR_')
+        ? HTTP_STATUS.INTERNAL_SERVER_ERROR
+        : HTTP_STATUS.SERVICE_UNAVAILABLE;
+
+      return context.json(errorResponse, httpStatus);
+    }
   });
-});
-
-export default app;
+};
 ```
 
 ## 型定義の自動生成
@@ -84,16 +213,9 @@ export default app;
 import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
-  input: 'http://localhost:3000/api/openapi.yaml',
-  output: {
-    path: './shared/types/api',
-    format: 'prettier',
-  },
-  types: {
-    dates: 'types+transform',
-    enums: 'typescript',
-  },
-  plugins: ['@hey-api/typescript', '@hey-api/zod'],
+  input: './public/openapi.yaml',
+  output: './shared/types/api',
+  plugins: ['@hey-api/typescript', { name: 'zod', exportFromIndex: true }],
 });
 ```
 
@@ -108,6 +230,8 @@ shared/types/api/
 
 ### 型定義生成コマンド
 
+**📝 重要**: 型定義生成は2ステップで実行されます
+
 ```bash
 # 1. 開発サーバーを起動
 pnpm dev
@@ -115,6 +239,12 @@ pnpm dev
 # 2. 別ターミナルで型定義生成
 pnpm generate-types
 ```
+
+**🔄 内部動作**:
+
+1. **OpenAPIスペック収集**: サーバーから `/api/openapi.yaml` を取得して `public/openapi.yaml` に保存
+2. **型定義生成**: ローカルファイルから `shared/types/api/` に型を生成
+3. **コード整形**: 生成されたコードを自動整形
 
 ## 型安全なAPI通信の実装
 
@@ -185,7 +315,180 @@ Swagger UI画面で実際にAPIを試すことができます：
 1. http://localhost:3000/api/swagger にアクセス
 2. Health Check APIを選択
 3. 「Try it out」ボタンをクリック
-4. 「Execute」ボタンでAPIを実行
+4. エラーシミュレーションのテスト:
+   - `simulate` パラメーターに `error` を入力 → `SVR_002` エラー
+   - `simulate` パラメーターに `timeout` を入力 → `NET_002` エラー
+   - パラメーターなしで実行 → 正常レスポンス
+5. 「Execute」ボタンでAPIを実行
+
+### コマンドラインでのテスト
+
+```bash
+# 正常ケース
+curl "http://localhost:3000/api/health"
+
+# エラーシミュレーション
+curl "http://localhost:3000/api/health?simulate=error"
+curl "http://localhost:3000/api/health?simulate=timeout"
+```
+
+### 期待されるレスポンス例
+
+**正常時**:
+
+```json
+{
+  "status": "ok",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+**エラー時**:
+
+```json
+{
+  "error": "Service temporarily unavailable for maintenance",
+  "errorCode": "SVR_002",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+## グローバルエラーハンドリング
+
+### エラーハンドリングミドルウェア
+
+プロジェクト全体で統一されたエラー処理を提供するミドルウェア：
+
+```typescript
+// server/api/middleware/errorHandler.ts
+
+/**
+ * Honoアプリケーション用グローバルエラーハンドリングミドルウェア
+ * アプリケーション全体で発生したエラーをキャッチし、統一されたエラーレスポンスを返却
+ */
+export const errorHandlerMiddleware = async (context: Context, next: Next) => {
+  try {
+    await next();
+  } catch (error) {
+    // エラー処理の実行
+    const errorInfo = createErrorInfo(error, context);
+    const errorCode = classifyError(error);
+    const httpStatus = getHttpStatusFromErrorCode(errorCode);
+
+    // エラーの詳細をログ出力
+    consola.error('Unhandled error in API endpoint:', errorInfo);
+
+    // 統一されたエラーレスポンスを生成
+    const errorResponse = createErrorResponse(errorCode);
+    return context.json(errorResponse, httpStatus);
+  }
+};
+```
+
+### エラー分類システム
+
+```typescript
+/**
+ * エラーオブジェクトから適切なエラーコードを決定する関数
+ * @param error - 分類対象のエラー
+ * @returns 適切なエラーコード
+ */
+const classifyError = (error: unknown): ErrorCode => {
+  if (!(error instanceof Error)) {
+    return ERROR_TYPES.UNEXPECTED_ERROR;
+  }
+
+  // エラーメッセージパターンによるエラー分類
+  const errorPatterns = [
+    { patterns: ['timeout', 'TIMEOUT'], errorCode: ERROR_TYPES.TIMEOUT_ERROR },
+    { patterns: ['network', 'NETWORK'], errorCode: ERROR_TYPES.CONNECTION_ERROR },
+    { patterns: ['database', 'DB'], errorCode: ERROR_TYPES.DATABASE_ERROR },
+    { patterns: ['validation', 'invalid'], errorCode: ERROR_TYPES.VALIDATION_INVALID_FORMAT },
+    { patterns: ['file', 'FILE'], errorCode: ERROR_TYPES.FILE_OPERATION_ERROR },
+  ];
+
+  // ZodErrorの特別な処理
+  if (error.name === 'ZodError') {
+    return ERROR_TYPES.VALIDATION_INVALID_FORMAT;
+  }
+
+  // メッセージパターンによる分類
+  const matchedPattern = errorPatterns.find(({ patterns }) =>
+    patterns.some((pattern) => error.message.includes(pattern)),
+  );
+
+  return matchedPattern?.errorCode ?? ERROR_TYPES.INTERNAL_SERVER_ERROR;
+};
+```
+
+### HTTPステータスコードマッピング
+
+```typescript
+export const getHttpStatusFromErrorCode = (errorCode: ErrorCode): number => {
+  // ネットワークエラー → 408 (Request Timeout) または 503 (Service Unavailable)
+  if (errorCode.startsWith('NET_')) {
+    return errorCode === ERROR_TYPES.TIMEOUT_ERROR ? 408 : 503;
+  }
+
+  // サーバーエラー → 500 (Internal Server Error) または 503 (Service Unavailable)
+  if (errorCode.startsWith('SVR_')) {
+    return errorCode === ERROR_TYPES.SERVICE_UNAVAILABLE ? 503 : 500;
+  }
+
+  // バリデーションエラー → 400 (Bad Request)
+  if (errorCode.startsWith('VAL_')) {
+    return 400;
+  }
+
+  // 認証・認可エラー → 401 (Unauthorized) または 403 (Forbidden)
+  if (errorCode.startsWith('AUTH_')) {
+    const authUnauthorizedCodes = [ERROR_TYPES.AUTH_FAILED, ERROR_TYPES.AUTH_SESSION_EXPIRED];
+    return authUnauthorizedCodes.includes(errorCode) ? 401 : 403;
+  }
+
+  // 不明エラー → 500 (Internal Server Error)
+  return 500;
+};
+```
+
+## JSDocベストプラクティス
+
+### 適切なJSDoc記述例
+
+```typescript
+/**
+ * ヘルスチェック処理を実行する関数
+ * メモリ、ファイルシステム、外部サービスの状態をチェック
+ * @throws {Error} チェックが失敗した場合
+ */
+const performHealthChecks = async () => {
+  // 実装...
+};
+
+/**
+ * メモリ使用量をチェックする関数
+ * @returns メモリ使用量（MB）またはエラー情報
+ */
+const checkMemoryUsage = (): HealthCheckResult<number> => {
+  // 実装...
+};
+
+/**
+ * エラーレスポンスを生成するヘルパー関数
+ * @param errorCode - エラーコード
+ * @param customMessage - カスタムエラーメッセージ（省略時はデフォルトメッセージを使用）
+ * @param timestamp - タイムスタンプ（省略時は現在時刻を使用）
+ * @returns エラーレスポンスオブジェクト
+ */
+export const createErrorResponse = (errorCode: ErrorCode, customMessage?: string, timestamp?: string) => {
+  // 実装...
+};
+```
+
+### 避けるべき表現
+
+- 技術的に不正確な用語（「パターンマッチング風」「関数型パラダイム用」など）
+- 実装詳細ではなく、機能の目的を明確に説明する
 
 ## 開発フローの基本
 
