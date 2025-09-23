@@ -133,7 +133,6 @@ export const createErrorResponse = (errorCode: ErrorCode, customMessage?: string
  * ```typescript
  * ERROR_MAP.TIMEOUT_ERROR.CODE // 'NET_002'
  * ERROR_MAP.TIMEOUT_ERROR.MESSAGE // 'リクエストがタイムアウトしました'
- * ERROR_MAP.VALIDATION_INVALID_FORMAT.CODE // 'VAL_002'
  * ```
  */
 export const ERROR_MAP = {
