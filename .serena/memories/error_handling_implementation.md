@@ -165,7 +165,7 @@ const classifyError = (error: unknown): ErrorCode => {
   ] as const;
 
   // ZodErrorの特別な処理
-  if (error.name === 'ZodError') {
+  if (error instanceof ZodError) {
     return ERROR_TYPES.VALIDATION_INVALID_FORMAT;
   }
 
