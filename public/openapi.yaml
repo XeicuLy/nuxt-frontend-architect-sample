@@ -46,7 +46,7 @@
                                         {
                                           'type': 'string',
                                           'format': 'date-time',
-                                          'example': '2025-09-20T00:41:10.674Z',
+                                          'example': '2025-09-23T01:47:39.635Z',
                                         },
                                     },
                                   'required': ['status', 'timestamp'],
@@ -70,14 +70,38 @@
                                       'errorCode':
                                         {
                                           'type': 'string',
+                                          'enum':
+                                            [
+                                              'NET_001',
+                                              'NET_002',
+                                              'NET_003',
+                                              'NET_004',
+                                              'SVR_001',
+                                              'SVR_002',
+                                              'SVR_003',
+                                              'SVR_004',
+                                              'SVR_005',
+                                              'VAL_001',
+                                              'VAL_002',
+                                              'VAL_003',
+                                              'VAL_004',
+                                              'AUTH_001',
+                                              'AUTH_002',
+                                              'AUTH_003',
+                                              'AUTH_004',
+                                              'UNK_001',
+                                              'UNK_002',
+                                              'UNK_003',
+                                              'UNK_004',
+                                            ],
                                           'example': 'SVR_002',
-                                          'description': 'カスタムエラーコード（NET_xxx: ネットワーク, SVR_xxx: サーバー, UNK_xxx: 不明）',
+                                          'description': '統一エラーコード（可読性重視）: NET_xxx(ネットワーク), SVR_xxx(サーバー), VAL_xxx(バリデーション), AUTH_xxx(認証), UNK_xxx(不明)',
                                         },
                                       'timestamp':
                                         {
                                           'type': 'string',
                                           'format': 'date-time',
-                                          'example': '2025-09-20T00:41:10.675Z',
+                                          'example': '2025-09-23T01:47:39.636Z',
                                         },
                                     },
                                   'required': ['error', 'errorCode', 'timestamp'],
@@ -101,14 +125,93 @@
                                       'errorCode':
                                         {
                                           'type': 'string',
+                                          'enum':
+                                            [
+                                              'NET_001',
+                                              'NET_002',
+                                              'NET_003',
+                                              'NET_004',
+                                              'SVR_001',
+                                              'SVR_002',
+                                              'SVR_003',
+                                              'SVR_004',
+                                              'SVR_005',
+                                              'VAL_001',
+                                              'VAL_002',
+                                              'VAL_003',
+                                              'VAL_004',
+                                              'AUTH_001',
+                                              'AUTH_002',
+                                              'AUTH_003',
+                                              'AUTH_004',
+                                              'UNK_001',
+                                              'UNK_002',
+                                              'UNK_003',
+                                              'UNK_004',
+                                            ],
                                           'example': 'SVR_002',
-                                          'description': 'カスタムエラーコード（NET_xxx: ネットワーク, SVR_xxx: サーバー, UNK_xxx: 不明）',
+                                          'description': '統一エラーコード（可読性重視）: NET_xxx(ネットワーク), SVR_xxx(サーバー), VAL_xxx(バリデーション), AUTH_xxx(認証), UNK_xxx(不明)',
                                         },
                                       'timestamp':
                                         {
                                           'type': 'string',
                                           'format': 'date-time',
-                                          'example': '2025-09-20T00:41:10.675Z',
+                                          'example': '2025-09-23T01:47:39.636Z',
+                                        },
+                                    },
+                                  'required': ['error', 'errorCode', 'timestamp'],
+                                },
+                            },
+                        },
+                    },
+                  '503':
+                    {
+                      'description': 'サービス利用不可エラー（実際のヘルスチェック失敗時）',
+                      'content':
+                        {
+                          'application/json':
+                            {
+                              'schema':
+                                {
+                                  'type': 'object',
+                                  'properties':
+                                    {
+                                      'error': { 'type': 'string', 'example': 'Service temporarily unavailable' },
+                                      'errorCode':
+                                        {
+                                          'type': 'string',
+                                          'enum':
+                                            [
+                                              'NET_001',
+                                              'NET_002',
+                                              'NET_003',
+                                              'NET_004',
+                                              'SVR_001',
+                                              'SVR_002',
+                                              'SVR_003',
+                                              'SVR_004',
+                                              'SVR_005',
+                                              'VAL_001',
+                                              'VAL_002',
+                                              'VAL_003',
+                                              'VAL_004',
+                                              'AUTH_001',
+                                              'AUTH_002',
+                                              'AUTH_003',
+                                              'AUTH_004',
+                                              'UNK_001',
+                                              'UNK_002',
+                                              'UNK_003',
+                                              'UNK_004',
+                                            ],
+                                          'example': 'SVR_002',
+                                          'description': '統一エラーコード（可読性重視）: NET_xxx(ネットワーク), SVR_xxx(サーバー), VAL_xxx(バリデーション), AUTH_xxx(認証), UNK_xxx(不明)',
+                                        },
+                                      'timestamp':
+                                        {
+                                          'type': 'string',
+                                          'format': 'date-time',
+                                          'example': '2025-09-23T01:47:39.636Z',
                                         },
                                     },
                                   'required': ['error', 'errorCode', 'timestamp'],
