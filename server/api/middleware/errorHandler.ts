@@ -1,5 +1,6 @@
 import consola from 'consola';
 import type { Context, Next } from 'hono';
+import { ZodError } from 'zod';
 import { createErrorResponse, ERROR_TYPES, getHttpStatusFromErrorCode } from '#shared/constants/errorCode';
 import { HTTP_STATUS } from '#shared/constants/httpStatus';
 
@@ -38,7 +39,7 @@ const classifyError = (error: unknown): (typeof ERROR_TYPES)[keyof typeof ERROR_
   ] as const;
 
   // ZodErrorの特別な処理
-  if (error.name === 'ZodError') {
+  if (error instanceof ZodError) {
     return ERROR_TYPES.VALIDATION_INVALID_FORMAT;
   }
 
