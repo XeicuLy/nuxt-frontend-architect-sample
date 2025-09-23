@@ -87,7 +87,7 @@ pnpm build            # 本番用ビルド
 ### 🔧 型・API関連
 
 ```bash
-pnpm generate-types       # API型定義自動生成（完全自動化）
+pnpm generate-types       # API型定義生成
 pnpm typecheck            # 型チェック
 ```
 

@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import consola from 'consola';
@@ -11,7 +11,7 @@ import consola from 'consola';
 /**
  * 利用可能なパッケージマネージャーを検出
  */
-function detectPackageManager(): string {
+const detectPackageManager = (): string => {
   // pnpm-lock.yaml が存在する場合はpnpmを優先
   if (existsSync(join(process.cwd(), 'pnpm-lock.yaml'))) {
     try {
@@ -23,20 +23,20 @@ function detectPackageManager(): string {
       consola.warn('⚠️  pnpmが見つかりません。npmを使用します。');
     }
   }
-  
+
   // package-lock.json が存在する場合はnpm
   if (existsSync(join(process.cwd(), 'package-lock.json'))) {
     return 'npm';
   }
-  
+
   // yarn.lock が存在する場合はyarn
   if (existsSync(join(process.cwd(), 'yarn.lock'))) {
     return 'yarn';
   }
-  
+
   // デフォルトはnpm
   return 'npm';
-}
+};
 
 /** パッケージマネージャー */
 const PACKAGE_MANAGER = detectPackageManager();
@@ -58,89 +58,109 @@ const PATHS = {
 } as const;
 
 /**
- * サーバープロセスを管理するクラス
+ * サーバープロセス状態の型定義
  */
-class ServerManager {
-  private process: ChildProcess | null = null;
-  private isShuttingDown = false;
+type ServerState = {
+  process: ChildProcess | null;
+  isShuttingDown: boolean;
+};
 
-  /**
-   * 開発サーバーを起動
-   */
-  async start(): Promise<void> {
-    consola.info(`🚀 開発サーバーを起動中... (${PACKAGE_MANAGER})`);
+/**
+ * サーバー状態を作成
+ */
+const createServerState = (): ServerState => ({
+  process: null,
+  isShuttingDown: false,
+});
 
-    return new Promise((resolve, reject) => {
-      // dev コマンドでサーバーを起動
-      const devCommand = PACKAGE_MANAGER === 'npm' ? 'run' : '';
-      const args = devCommand ? [devCommand, 'dev'] : ['dev'];
-      
-      this.process = spawn(PACKAGE_MANAGER, args, {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        detached: false,
+/**
+ * 開発サーバーを起動
+ */
+const startServer = (state: ServerState): Promise<void> => {
+  consola.info(`🚀 開発サーバーを起動中... (${PACKAGE_MANAGER})`);
+
+  return new Promise((resolve, reject) => {
+    // dev コマンドでサーバーを起動
+    const devCommand = PACKAGE_MANAGER === 'npm' ? 'run' : '';
+    const args = devCommand ? [devCommand, 'dev'] : ['dev'];
+
+    state.process = spawn(PACKAGE_MANAGER, args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      detached: false,
+    });
+
+    if (!state.process) {
+      reject(new Error('サーバープロセスの起動に失敗しました'));
+      return;
+    }
+
+    // プロセス終了時の処理
+    state.process.on('exit', (code) => {
+      if (!state.isShuttingDown && code !== 0) {
+        reject(new Error(`サーバープロセスが異常終了しました (code: ${code})`));
+      }
+    });
+
+    // エラーハンドリング
+    state.process.on('error', (error) => {
+      reject(new Error(`サーバー起動エラー: ${error.message}`));
+    });
+
+    // 標準出力の監視（起動完了の検知）
+    state.process.stdout?.on('data', (data) => {
+      const output = data.toString();
+      consola.debug('Server stdout:', output);
+
+      // Nuxtの起動完了メッセージを検知
+      if (output.includes('Local:') && output.includes(SERVER_CONFIG.port)) {
+        consola.success('✅ サーバーが起動しました');
+        resolve();
+      }
+    });
+
+    state.process.stderr?.on('data', (data) => {
+      const output = data.toString();
+      consola.debug('Server stderr:', output);
+
+      // エラーでない場合もstderrに出力される場合があるので、
+      // 特定のエラーパターンのみをチェック
+      if (output.includes('Error:') || output.includes('EADDRINUSE')) {
+        reject(new Error(`サーバーエラー: ${output}`));
+      }
+    });
+
+    // タイムアウト処理
+    setTimeout(() => {
+      if (state.process && !state.process.killed) {
+        reject(new Error(`サーバー起動がタイムアウトしました (${SERVER_CONFIG.maxStartupTime}ms)`));
+      }
+    }, SERVER_CONFIG.maxStartupTime);
+  });
+};
+
+/**
+ * サーバーの起動完了を待機
+ */
+const waitForServerReady = async (): Promise<void> => {
+  consola.info('⏳ サーバーの起動完了を待機中...');
+
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < SERVER_CONFIG.maxStartupTime) {
+    try {
+      // ヘルスチェックエンドポイントで確認
+      const response = await fetch(`${SERVER_CONFIG.url}${PATHS.healthEndpoint}`, {
+        signal: AbortSignal.timeout(5000),
       });
 
-      if (!this.process) {
-        reject(new Error('サーバープロセスの起動に失敗しました'));
+      if (response.ok) {
+        consola.success('✅ サーバーが利用可能になりました');
         return;
       }
-
-      // プロセス終了時の処理
-      this.process.on('exit', (code) => {
-        if (!this.isShuttingDown && code !== 0) {
-          reject(new Error(`サーバープロセスが異常終了しました (code: ${code})`));
-        }
-      });
-
-      // エラーハンドリング
-      this.process.on('error', (error) => {
-        reject(new Error(`サーバー起動エラー: ${error.message}`));
-      });
-
-      // 標準出力の監視（起動完了の検知）
-      this.process.stdout?.on('data', (data) => {
-        const output = data.toString();
-        consola.debug('Server stdout:', output);
-        
-        // Nuxtの起動完了メッセージを検知
-        if (output.includes('Local:') && output.includes(SERVER_CONFIG.port)) {
-          consola.success('✅ サーバーが起動しました');
-          resolve();
-        }
-      });
-
-      this.process.stderr?.on('data', (data) => {
-        const output = data.toString();
-        consola.debug('Server stderr:', output);
-        
-        // エラーでない場合もstderrに出力される場合があるので、
-        // 特定のエラーパターンのみをチェック
-        if (output.includes('Error:') || output.includes('EADDRINUSE')) {
-          reject(new Error(`サーバーエラー: ${output}`));
-        }
-      });
-
-      // タイムアウト処理
-      setTimeout(() => {
-        if (this.process && !this.process.killed) {
-          reject(new Error(`サーバー起動がタイムアウトしました (${SERVER_CONFIG.maxStartupTime}ms)`));
-        }
-      }, SERVER_CONFIG.maxStartupTime);
-    });
-  }
-
-  /**
-   * サーバーの起動完了を待機
-   */
-  async waitForReady(): Promise<void> {
-    consola.info('⏳ サーバーの起動完了を待機中...');
-
-    const startTime = Date.now();
-    
-    while (Date.now() - startTime < SERVER_CONFIG.maxStartupTime) {
+    } catch {
+      // ヘルスチェックが失敗した場合は、OpenAPIエンドポイントで確認
       try {
-        // ヘルスチェックエンドポイントで確認
-        const response = await fetch(`${SERVER_CONFIG.url}${PATHS.healthEndpoint}`, {
+        const response = await fetch(`${SERVER_CONFIG.url}${PATHS.apiEndpoint}`, {
           signal: AbortSignal.timeout(5000),
         });
 
@@ -148,72 +168,60 @@ class ServerManager {
           consola.success('✅ サーバーが利用可能になりました');
           return;
         }
-      } catch (error) {
-        // ヘルスチェックが失敗した場合は、OpenAPIエンドポイントで確認
-        try {
-          const response = await fetch(`${SERVER_CONFIG.url}${PATHS.apiEndpoint}`, {
-            signal: AbortSignal.timeout(5000),
-          });
-
-          if (response.ok) {
-            consola.success('✅ サーバーが利用可能になりました');
-            return;
-          }
-        } catch {
-          // 両方失敗した場合は次のループへ
-        }
+      } catch {
+        // 両方失敗した場合は次のループへ
       }
-
-      // 次のチェックまで待機
-      await new Promise(resolve => setTimeout(resolve, SERVER_CONFIG.healthCheckInterval));
     }
 
-    throw new Error('サーバーの起動確認がタイムアウトしました');
+    // 次のチェックまで待機
+    await new Promise((resolve) => setTimeout(resolve, SERVER_CONFIG.healthCheckInterval));
   }
 
-  /**
-   * サーバーを停止
-   */
-  async stop(): Promise<void> {
-    if (!this.process) {
-      consola.info('停止するプロセスがありません');
+  throw new Error('サーバーの起動確認がタイムアウトしました');
+};
+
+/**
+ * サーバーを停止
+ */
+const stopServer = (state: ServerState): Promise<void> => {
+  if (!state.process) {
+    consola.info('停止するプロセスがありません');
+    return Promise.resolve();
+  }
+
+  consola.info('🛑 サーバーを停止中...');
+  state.isShuttingDown = true;
+
+  return new Promise((resolve) => {
+    if (!state.process) {
+      resolve();
       return;
     }
 
-    consola.info('🛑 サーバーを停止中...');
-    this.isShuttingDown = true;
-
-    return new Promise((resolve) => {
-      if (!this.process) {
-        resolve();
-        return;
-      }
-
-      // プロセス終了時の処理
-      this.process.once('exit', () => {
-        consola.success('✅ サーバーが停止しました');
-        this.process = null;
-        resolve();
-      });
-
-      // Graceful shutdown を試行
-      this.process.kill('SIGTERM');
-
-      // タイムアウト後に強制終了
-      setTimeout(() => {
-        if (this.process && !this.process.killed) {
-          consola.warn('⚠️  強制終了します');
-          this.process.kill('SIGKILL');
-        }
-      }, SERVER_CONFIG.shutdownTimeout);
+    // プロセス終了時の処理
+    state.process.once('exit', () => {
+      consola.success('✅ サーバーが停止しました');
+      state.process = null;
+      resolve();
     });
-  }
-}
+
+    // Graceful shutdown を試行
+    state.process.kill('SIGTERM');
+
+    // タイムアウト後に強制終了
+    setTimeout(() => {
+      if (state.process && !state.process.killed) {
+        consola.warn('⚠️  強制終了します');
+        state.process.kill('SIGKILL');
+      }
+    }, SERVER_CONFIG.shutdownTimeout);
+  });
+};
 
 /**
  * OpenAPIスペックを取得してファイルに保存
  */
-async function fetchAndSaveOpenApiSpec(): Promise<void> {
+const fetchAndSaveOpenApiSpec = async (): Promise<void> => {
   const forceGenerate = process.argv.includes('--force');
 
   // 既存ファイルのチェック
@@ -256,18 +264,18 @@ async function fetchAndSaveOpenApiSpec(): Promise<void> {
 
     throw new Error('OpenAPIスペックの取得に失敗し、既存ファイルも見つかりませんでした');
   }
-}
+};
 
 /**
  * 型定義を生成
  */
-async function generateTypes(): Promise<void> {
+const generateTypes = async (): Promise<void> => {
   consola.info('🔧 型定義を生成中...');
 
   return new Promise((resolve, reject) => {
     const generateCommand = PACKAGE_MANAGER === 'npm' ? 'run' : 'run';
     const args = [generateCommand, 'generate-types:ci'];
-    
+
     const process = spawn(PACKAGE_MANAGER, args, {
       stdio: 'inherit',
     });
@@ -285,30 +293,30 @@ async function generateTypes(): Promise<void> {
       reject(new Error(`型定義生成エラー: ${error.message}`));
     });
   });
-}
+};
 
 /**
  * メイン処理
  */
-async function main(): Promise<void> {
-  const serverManager = new ServerManager();
+const main = async (): Promise<void> => {
+  const serverState = createServerState();
   let serverStarted = false;
 
   try {
     consola.start('🎯 自動化された型生成プロセスを開始します...');
 
     // 1. サーバー起動
-    await serverManager.start();
+    await startServer(serverState);
     serverStarted = true;
 
     // 2. サーバーの準備完了を待機
-    await serverManager.waitForReady();
+    await waitForServerReady();
 
     // 3. OpenAPIスペックの取得
     await fetchAndSaveOpenApiSpec();
 
     // 4. サーバー停止
-    await serverManager.stop();
+    await stopServer(serverState);
     serverStarted = false;
 
     // 5. 型定義生成
@@ -321,7 +329,7 @@ async function main(): Promise<void> {
     // サーバーが起動している場合は停止
     if (serverStarted) {
       try {
-        await serverManager.stop();
+        await stopServer(serverState);
       } catch (stopError) {
         consola.error('サーバー停止時にエラーが発生:', stopError);
       }
@@ -329,7 +337,7 @@ async function main(): Promise<void> {
 
     process.exit(1);
   }
-}
+};
 
 // スクリプト実行時の処理
 if (import.meta.url === `file://${process.argv[1]}`) {
