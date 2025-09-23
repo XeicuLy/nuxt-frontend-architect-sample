@@ -1,71 +1,226 @@
 # Task Completion Checklist
 
-When completing any development task, always run these commands to ensure code quality:
+## 🔍 Basic Quality Check
 
-## Required Quality Checks
+### Required Check Items
 
-### 1. Linting and Formatting
+1. **Lint & Format Check**
 
-```bash
-pnpm lint                      # Run all quality checks
-# OR run individually:
-pnpm eslint                    # Check JavaScript/TypeScript/Vue linting
-pnpm biome                     # Check Biome rules
-pnpm prettier                  # Check code formatting
+   ```bash
+   pnpm lint:fix
+   ```
+
+   - No ESLint errors
+   - No Biome errors
+   - Prettier format applied
+   - No TypeScript type errors
+
+2. **Test Execution**
+
+   ```bash
+   pnpm test
+   ```
+
+   - All existing tests pass
+   - Tests added for new features (when necessary)
+
+3. **Build Verification**
+
+   ```bash
+   pnpm build
+   ```
+
+   - Production build succeeds
+   - Type definition generation succeeds
+
+## 🏗️ Architecture Compliance Check
+
+### Hybrid State Management
+
+- **When using TanStack Query**:
+  - API communication implemented in `app/services/`
+  - Query definitions in `app/queries/`
+  - Adapter provided in `app/composables/`
+  - Manages server state only
+
+- **When using Pinia**:
+  - Store definitions in `app/store/`
+  - Store access provided in `app/composables/`
+  - Manages client state only
+  - Uses `createTestingPinia` for testing
+
+### Unified Interface
+
+- Components access through single `useXxx()` interface
+- Server and client states are properly separated
+
+## 📝 Code Style Compliance Check
+
+### JSDoc Quality
+
+- **Appropriate JSDoc for functions**:
+  - Clear and specific description of purpose
+  - All parameters explained with `@param` tags
+  - Return value explained with `@returns` tags
+  - Use technically accurate expressions
+
+- **Expressions to avoid**:
+  - "Pattern matching style"
+  - "Functional paradigm style"
+  - "Pure function" (when used without context)
+
+### Naming Conventions
+
+- **Components**: PascalCase
+- **Composables**: `use` + camelCase
+- **Queries**: `use` + camelCase + `Query`
+- **Stores**: `use` + camelCase + `Store`
+
+## 🚨 Error Handling Compliance Check
+
+### Error Code System
+
+- **Use appropriate classification**:
+  - `NET_xxx`: Network-related
+  - `SVR_xxx`: Server internal
+  - `VAL_xxx`: Validation
+  - `AUTH_xxx`: Authentication/Authorization
+  - `UNK_xxx`: Unknown/Unexpected
+
+### Unified Response Format
+
+```json
+{
+  "error": "Error message",
+  "errorCode": "SVR_002",
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
 ```
 
-### 2. Type Checking
+### Error Handling Function Verification
 
 ```bash
-pnpm typecheck                 # Verify TypeScript types
+# Test after starting development server
+curl "http://localhost:3000/api/health?simulate=error"
+curl "http://localhost:3000/api/health?simulate=timeout"
 ```
 
-### 3. Auto-fix Issues (if needed)
+## 🔄 API-First Development Check
+
+### Type Definition Synchronization
 
 ```bash
-pnpm lint:fix                  # Fix all auto-fixable issues
-# OR fix individually:
-pnpm eslint:fix               # Fix ESLint issues
-pnpm biome:fix                # Fix Biome issues
-pnpm prettier:fix             # Fix formatting
+pnpm generate-types
 ```
 
-### 4. API Type Generation (if API changes made)
+- OpenAPI specification is up to date
+- TypeScript type definitions are synchronized
+- Zod schemas are properly defined
+
+### Swagger Operation Verification
+
+- Accessible at http://localhost:3000/api/swagger
+- API specification displayed correctly
+- Test parameters are functional
+
+## 🧪 Test Quality Check
+
+### Test Coverage
 
 ```bash
-pnpm generate-types           # Regenerate API types from OpenAPI spec
+pnpm test:coverage
 ```
 
-### 5. Build Verification (for major changes)
+- Main logic is tested
+- Edge cases are considered
+
+### Test File Placement
+
+- **Unit tests**: `*.{test,spec}.ts`
+- **Nuxt tests**: `*.nuxt.{test,spec}.ts`
+- **Appropriate directory**: `app/__test__/`
+
+## 📚 Documentation Update Check
+
+### Auto-generated Files
+
+- `public/openapi.yaml`: API specification
+- `shared/types/api/`: TypeScript type definitions
+
+### Manual Documentation
+
+- **When adding new features**: Update `docs/` directory
+- **When changing architecture**: Update README.md
+- **For important changes**: Create CHANGELOG (when necessary)
+
+## 🔐 Security Check
+
+### Exclusion of Secret Information
+
+- No secret keys or API keys committed
+- `.env` files included in `.gitignore`
+- No secret information output to logs
+
+## 📦 Dependency Check
+
+### Package Updates
 
 ```bash
-pnpm build                    # Ensure the project builds successfully
+pnpm update
 ```
 
-## Pre-commit Requirements
+- Dependencies are up to date (when necessary)
+- No vulnerabilities
 
-- All linting must pass (`pnpm lint`)
-- TypeScript must compile without errors (`pnpm typecheck`)
-- Code must be properly formatted (Prettier + Biome)
-- Build must succeed for production changes
+## 🏃‍♂️ Performance Check
 
-## Development Server
-
-Always test changes with:
+### Build Size
 
 ```bash
-pnpm dev                      # Start development server
+pnpm build
 ```
 
-Visit:
+- Bundle size is appropriate
+- No unnecessary imports
 
-- http://localhost:3000 - Main application
-- http://localhost:3000/api/swagger - API documentation
+### Development Experience
 
-## Key Quality Standards
+```bash
+pnpm dev
+```
 
-- **No ESLint errors or warnings**
-- **No TypeScript errors**
-- **Consistent formatting** (Prettier + Biome)
-- **Accessibility compliance** (Vue a11y plugin)
-- **TailwindCSS best practices** (TailwindCSS plugin)
+- Development server starts quickly
+- Hot reload is functional
+
+## 🎯 Project-Specific Check
+
+### Volta Environment
+
+- Using Node.js v22.16.0
+- Using pnpm v10.15.1
+
+### Git Conventions
+
+- Create commit messages with Gitmoji conventions
+- Pass Husky pre-commit hooks
+
+## ✅ Final Verification Commands
+
+```bash
+# Execute everything in batch
+pnpm lint:fix && pnpm test && pnpm build
+
+# Complete check including error handling related
+pnpm generate-types && pnpm lint:fix && pnpm test && pnpm build
+```
+
+## 🚀 Pre-Deployment Final Check
+
+1. All automated tests pass
+2. Manual testing confirms error handling
+3. Production build succeeds
+4. Type definitions and API specification synchronization confirmed
+5. Documentation updates completed
+6. Security check completed
+
+Following this checklist enables efficient development while maintaining project quality and consistency.

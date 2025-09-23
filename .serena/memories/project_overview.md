@@ -1,153 +1,108 @@
 # Project Overview
 
-## Purpose
+## Project Purpose
 
-This is a **Nuxt 4 + Hono + TanStack Query + Pinia フルスタック サンプル** project that demonstrates modern full-stack web development with hybrid state management. The project showcases:
+This project is a **Nuxt 4 + Hono + TanStack Query + Pinia full-stack sample** that provides a practical full-stack application sample for learning modern hybrid state management.
 
-- A Nuxt.js frontend application with Vue 3 and TypeScript
-- TanStack Query for efficient server state management (API data, caching, synchronization)
-- Pinia for client-side state management (UI state, user input, local data)
-- Clear separation between server and client state concerns
-- A backend API built with Hono framework integrated into Nuxt server
-- Health check API with OpenAPI documentation and Swagger UI
-- Type-safe API communication with auto-generated TypeScript types
-- Modern development tooling with linting, formatting, and type checking
-- Comprehensive testing setup for both state management approaches
+### Core Features
 
-## Tech Stack
+- **Hybrid State Management**: Clear separation of TanStack Query (server state) + Pinia (client state)
+- **API-First Development**: Auto-generated TypeScript type definitions from OpenAPI specifications
+- **Unified Error Handling**: Systematic error code classification and unified responses
+- **Type Safety**: Complete type safety between frontend and backend
+- **Test Support**: Comprehensive testing support for both state management systems
+
+## Technology Stack
 
 ### Frontend
 
-- **Nuxt 4** (v4.1.1) - フルスタック Vue.js フレームワーク
-- **Vue 3** (v3.5.21) - JavaScript framework
-- **TanStack Query** (@tanstack/vue-query v5.87.1) - サーバー状態管理・キャッシング・同期
-- **Pinia** (v3.0.3) - クライアント状態管理・UI状態・ユーザー入力
-- **@pinia/nuxt** (v0.11.2) - Pinia Nuxt integration
-- **@pinia/testing** (v1.0.2) - Pinia testing utilities
-- **TypeScript** (v5.9.2) - Type safety
-- **Tailwind CSS** (v3.4.17) - Utility-first CSS framework
+- **Nuxt 4** (4.1.1) - Full-stack framework
+- **Vue 3** (3.5.21) - Progressive framework
+- **TanStack Query** (@tanstack/vue-query v5.87.1) - Server state management
+- **Pinia** (v3.0.3) + @pinia/testing (1.0.2) - Client state management & testing
+- **TypeScript** (5.9.2) - Type safety
+- **Tailwind CSS** - Styling
 
 ### Backend
 
-- **Hono** (v4.9.6) - Fast web framework
-- **Zod** (v4.1.5) - Schema validation
-- **@hono/zod-openapi** (v1.1.0) - OpenAPI integration
-- **Swagger UI** (v0.5.2) - API documentation
+- **Hono** (4.9.6) - Lightweight high-performance web framework
+- **OpenAPI** + **Swagger UI** - API specification and documentation
+- **Zod** (4.1.5) - Schema validation
 
 ### Development Tools
 
-- **Biome** (v2.2.3) - Fast linter and formatter
-- **ESLint** (v9.35.0) - JavaScript/TypeScript linting
-- **Prettier** (v3.6.2) - Code formatting
-- **@hey-api/openapi-ts** (v0.82.4) - TypeScript API type generation
-- **Vitest** - Testing framework
-- **@nuxt/test-utils** - Nuxt testing utilities
+- **Biome** (2.2.3) - High-speed linter & formatter
+- **ESLint** (9.35.0) + **Prettier** (3.6.2) - Code quality
+- **@hey-api/openapi-ts** (0.82.4) - Auto-generated type definitions
+- **Vitest** + **@nuxt/test-utils** - Testing framework
 
-### Node.js Environment
+### Environment
 
-- Node.js v22.16.0 (managed by Volta)
-- pnpm v10.15.1 (managed by Volta)
+- **Node.js** v22.16.0+ (Volta managed)
+- **pnpm** v10.15.1 (Volta managed)
 
-## Architecture Highlights
+## Project Structure
+
+```
+├── app/                           # Nuxt application
+│   ├── store/                     # Pinia stores (client state)
+│   ├── queries/                   # TanStack Query layer (server state)
+│   ├── composables/               # Unified adapter layer
+│   │   ├── common/               # Common utilities
+│   │   └── useHealth/            # Health check feature integration
+│   ├── services/                 # API communication & business logic
+│   ├── components/               # Vue components
+│   ├── helpers/test/             # Test helpers
+│   └── ...
+├── server/api/                   # Hono backend
+│   ├── middleware/               # Error handling middleware
+│   ├── schema/                   # Zod schema definitions
+│   └── routes/                   # API route handlers
+├── shared/                       # Shared constants & type definitions
+│   ├── constants/               # Error codes & HTTP status
+│   └── types/api/               # Auto-generated type definitions
+└── docs/                        # Detailed documentation
+```
+
+## Architecture Features
 
 ### Hybrid State Management
 
-- **TanStack Query**: サーバー状態（API データ、キャッシング、バックグラウンド同期）
-- **Pinia**: クライアント状態（UI 状態、ユーザー入力、ローカルデータ）
-- **Clear Boundaries**: サーバーとクライアント状態の明確な分離
-- **Testing Support**: Both state management systems have comprehensive testing support
+**Clear Separation of Responsibilities**:
 
-### Data Flow Architecture
+- **TanStack Query**: Specialized for API data, caching, and synchronization
+- **Pinia**: Specialized for UI state, user input, and local data
 
-#### Server State Flow
-
-1. **Service Layer** (`app/services/`) - API calls with Zod validation
-2. **Query Layer** (`app/queries/`) - TanStack Query integration
-3. **Adapter Composables** (`app/composables/useHealth/`) - Data transformation and business logic
-4. **Components** - Consume server state through adapter composables
-
-#### Client State Flow
-
-1. **Store Layer** (`app/store/`) - Pinia stores for client state
-2. **Store Composables** (`app/composables/useHealth/`) - Store access and transformation
-3. **Components** - Consume client state through store composables
-
-#### Integration Pattern
-
-Components receive both server and client state through a unified composable interface:
+**Unified Interface**:
 
 ```typescript
 const {
-  isLoading, // Server state from TanStack Query
-  healthStatusData, // Server state from TanStack Query
-  sampleInput, // Client state from Pinia
+  isLoading, // TanStack Query (server state)
+  healthStatusData, // TanStack Query (server state)
+  sampleInput, // Pinia (client state)
 } = useHealth();
 ```
 
-### SSR/SSG Support
+### Unified Error Handling
 
-- **Server-side hydration** via TanStack Query plugin
-- **Automatic dehydration/hydration** for seamless client-server transition
-- **Performance optimization** with intelligent caching strategies
-- **Pinia SSR compatibility** for client state when needed
+Systematic error code classification:
 
-## Current Implementation Details
+- **NET_xxx**: Network-related errors
+- **SVR_xxx**: Server internal errors
+- **VAL_xxx**: Validation errors
+- **AUTH_xxx**: Authentication/Authorization errors
+- **UNK_xxx**: Unknown/Unexpected errors
 
-### Implemented Features
+### API-First Development
 
-1. **Health Check API**: Complete server state management with API integration
-2. **User Input Management**: Client state management for form inputs
-3. **Hybrid State Integration**: Unified interface combining both state types
-4. **Testing Infrastructure**: Complete testing setup for both state management approaches
-5. **Type Safety**: End-to-end TypeScript integration
-6. **Component Architecture**: Clean component design consuming both state types
+1. OpenAPI specification definition
+2. Auto-generated TypeScript types
+3. Type-safe communication between frontend and backend
 
-### File Structure Overview
+## Learning Value
 
-```
-app/
-├── store/                     # Pinia stores (client state)
-│   └── health.ts             # Health-related client state
-├── queries/                  # TanStack Query composables
-│   └── useHealthQuery.ts     # Health API query
-├── composables/
-│   └── useHealth/
-│       ├── useHealthAdapter.ts   # Server state transformation
-│       ├── useHealthInput.ts     # Client state access
-│       └── index.ts              # Unified interface
-├── services/                 # API communication layer
-│   └── health.ts            # Health API service
-├── components/               # Vue components
-│   └── index/
-│       ├── Input.vue        # User input component
-│       └── ...
-├── helpers/test/            # Testing utilities
-│   └── setupTestingPinia.ts # Pinia testing setup
-└── ...
-```
-
-### Testing Strategy
-
-- **Query Testing**: Mock services for TanStack Query testing
-- **Store Testing**: `createTestingPinia` for isolated store testing
-- **Component Testing**: Integration tests with both state types
-- **E2E Testing**: Full application flow testing
-- **Type Testing**: TypeScript compilation checks
-
-## Development Workflow
-
-### State Management Guidelines
-
-1. **Server State**: Use TanStack Query for all API-related data
-2. **Client State**: Use Pinia for UI state, user input, and local data
-3. **No State Mixing**: Keep server and client concerns completely separate
-4. **Unified Interface**: Provide single composable interface to components
-5. **Testing First**: Write tests for both state types independently
-
-### Architecture Benefits
-
-- **Maintainable**: Clear separation of concerns
-- **Performant**: Optimized libraries for each state type
-- **Testable**: Independent testing capabilities
-- **Scalable**: Easy to extend with new features
-- **Type-Safe**: End-to-end TypeScript support
+- **Scalable Architecture**: Design patterns for large-scale applications
+- **State Management Separation**: Choosing the right state management for the right purpose
+- **Error Handling**: Unified error management system
+- **Testing Strategy**: Testing techniques for multiple state management systems
+- **Modern Toolchain**: Effective utilization of latest development tools
