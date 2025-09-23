@@ -1,5 +1,5 @@
+import type { GetApiHealthError } from '#shared/types/api';
 import { useHealthQuery } from '@/queries/useHealthQuery';
-import type { HealthErrorDetail } from '@/types/error';
 
 export interface HealthStatusData {
   healthStatus: string;
@@ -8,7 +8,7 @@ export interface HealthStatusData {
 
 export const useHealthAdapter = () => {
   const { healthQuery } = useHealthQuery();
-  const { isLoading, data: healthData, error, suspense: getHealthData } = healthQuery;
+  const { isLoading, data: healthData, error: healthError, suspense: getHealthData } = healthQuery;
 
   const healthStatus = computed<string>(() => healthData.value?.status ?? '-');
   const healthTimestamp = computed<string>(() => healthData.value?.timestamp ?? '-');
@@ -18,18 +18,18 @@ export const useHealthAdapter = () => {
     healthTimestamp: healthTimestamp.value,
   }));
 
-  // エラーコードを取得するcomputed
-  const errorCode = computed<string | null>(() => {
-    if (!error.value) return null;
-    const errorDetail = error.value as HealthErrorDetail;
-    return errorDetail.data?.errorCode ?? null;
+  const errorCode = computed<GetApiHealthError['errorCode'] | null>(() => {
+    if (!healthError.value) {
+      return null;
+    }
+    return healthError.value.data.errorCode;
   });
 
-  return { 
-    isLoading, 
-    healthStatusData, 
+  return {
+    isLoading,
+    healthStatusData,
     getHealthData,
-    error,
-    errorCode
+    healthError,
+    errorCode,
   };
 };

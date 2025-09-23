@@ -11,9 +11,9 @@ export const getHealthApi = async (): Promise<GetApiHealthResponse> => {
     });
     return zGetApiHealthResponse.parse(response);
   } catch (error) {
-    const errorDetail = error as HealthErrorDetail;
-    consola.error('Error fetching health API:', errorDetail.message);
-    consola.error(errorDetail.data.errorCode);
-    throw errorDetail;
+    const healthError = error as HealthErrorDetail;
+    consola.error('Error fetching health API:', healthError.message);
+    consola.error('Error code:', healthError.data.errorCode);
+    throw healthError;
   }
 };

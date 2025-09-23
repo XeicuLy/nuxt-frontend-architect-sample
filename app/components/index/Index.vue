@@ -6,7 +6,10 @@ import Input from './Input.vue';
 
 const greetingMessage = 'Hello, Frontend Architect Sample!';
 
-const { isLoading, healthStatusData, sampleInput, error, errorCode } = useHealth();
+const { isLoading, healthStatusData, sampleInput, healthError, errorCode } = useHealth();
+
+const errorMessage = computed(() => (healthError.value ? healthError.value.message : null));
+const hasError = computed(() => Boolean(errorMessage.value && errorCode.value));
 </script>
 
 <template>
@@ -15,9 +18,9 @@ const { isLoading, healthStatusData, sampleInput, error, errorCode } = useHealth
     <template v-if="isLoading">
       <p>Loading...</p>
     </template>
-    <template v-else-if="error">
+    <template v-else-if="hasError">
       <div class="text-red-500">
-        <p>Error: {{ error.message }}</p>
+        <p>Error: {{ errorMessage }}</p>
         <template v-if="errorCode">
           <p>Error Code: {{ errorCode }}</p>
         </template>
