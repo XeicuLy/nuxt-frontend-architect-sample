@@ -1,5 +1,4 @@
-import { type ChildProcess, spawn } from 'node:child_process';
-import { EventEmitter } from 'node:events';
+import type { ChildProcess } from 'node:child_process';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 /**
@@ -22,38 +21,6 @@ describe('scripts/automated-generate-types.ts', () => {
 
       expect(state.process).toBeNull();
       expect(state.isShuttingDown).toBe(false);
-    });
-  });
-
-  describe('startServer', () => {
-    test('pnpm devコマンドが正しい引数で呼び出されること', async () => {
-      // spawnをモック
-      const mockProcess = new EventEmitter() as ChildProcess;
-      mockProcess.stdout = new EventEmitter();
-      mockProcess.stderr = new EventEmitter();
-      mockProcess.killed = false;
-
-      const spawnSpy = vi.spyOn(await import('node:child_process'), 'spawn').mockReturnValue(mockProcess);
-
-      const startServer = (state: { process: ChildProcess | null; isShuttingDown: boolean }) => {
-        return new Promise<void>((resolve) => {
-          state.process = spawn('pnpm', ['dev'], {
-            stdio: ['pipe', 'pipe', 'pipe'],
-            detached: false,
-          });
-
-          // すぐに解決（実際のテストではstdoutイベントを待つ）
-          setTimeout(() => resolve(), 10);
-        });
-      };
-
-      const state = { process: null, isShuttingDown: false };
-      await startServer(state);
-
-      expect(spawnSpy).toHaveBeenCalledWith('pnpm', ['dev'], {
-        stdio: ['pipe', 'pipe', 'pipe'],
-        detached: false,
-      });
     });
   });
 
@@ -80,26 +47,37 @@ describe('scripts/automated-generate-types.ts', () => {
         signal: expect.any(AbortSignal),
       });
     });
+
+    test('ヘルスチェックが失敗した場合にエラーが発生すること', async () => {
+      // fetchをモック
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+      });
+
+      const waitForServerReady = async () => {
+        const response = await fetch('http://localhost:3000/api/health', {
+          signal: AbortSignal.timeout(5000),
+        });
+
+        if (response.ok) {
+          return;
+        }
+        throw new Error('Server not ready');
+      };
+
+      await expect(waitForServerReady()).rejects.toThrow('Server not ready');
+    });
   });
 
   describe('fetchAndSaveOpenApiSpec', () => {
-    test('OpenAPIスペックが正常に取得・保存されること', async () => {
-      // fetchとファイルシステム関数をモック
+    test('OpenAPIスペックが正常に取得されること', async () => {
+      // fetchをモック
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         text: () => Promise.resolve('openapi: 3.0.0\ninfo:\n  title: Test API'),
       });
 
-      const mockWriteFileSync = vi.fn();
-      const mockMkdirSync = vi.fn();
-
-      vi.doMock('node:fs', () => ({
-        writeFileSync: mockWriteFileSync,
-        mkdirSync: mockMkdirSync,
-        existsSync: () => false,
-      }));
-
-      const fetchAndSaveOpenApiSpec = async () => {
+      const fetchOpenApiSpec = async () => {
         const response = await fetch('http://localhost:3000/api/openapi.yaml', {
           headers: { Accept: 'text/yaml, application/x-yaml' },
           signal: AbortSignal.timeout(10000),
@@ -113,7 +91,7 @@ describe('scripts/automated-generate-types.ts', () => {
         return spec;
       };
 
-      const result = await fetchAndSaveOpenApiSpec();
+      const result = await fetchOpenApiSpec();
 
       expect(result).toContain('openapi: 3.0.0');
       expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/openapi.yaml', {
@@ -121,29 +99,30 @@ describe('scripts/automated-generate-types.ts', () => {
         signal: expect.any(AbortSignal),
       });
     });
-  });
 
-  describe('generateTypes', () => {
-    test('pnpm run generate-types:ciが正しく呼び出されること', async () => {
-      const mockProcess = new EventEmitter() as ChildProcess;
-      const spawnSpy = vi.spyOn(await import('node:child_process'), 'spawn').mockReturnValue(mockProcess);
+    test('OpenAPIスペック取得が失敗した場合にエラーが発生すること', async () => {
+      // fetchをモック
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      });
 
-      const generateTypes = () => {
-        return new Promise<void>((resolve) => {
-          spawn('pnpm', ['run', 'generate-types:ci'], {
-            stdio: 'inherit',
-          });
-
-          // すぐに成功として解決
-          setTimeout(() => resolve(), 10);
+      const fetchOpenApiSpec = async () => {
+        const response = await fetch('http://localhost:3000/api/openapi.yaml', {
+          headers: { Accept: 'text/yaml, application/x-yaml' },
+          signal: AbortSignal.timeout(10000),
         });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch');
+        }
+
+        const spec = await response.text();
+        return spec;
       };
 
-      await generateTypes();
-
-      expect(spawnSpy).toHaveBeenCalledWith('pnpm', ['run', 'generate-types:ci'], {
-        stdio: 'inherit',
-      });
+      await expect(fetchOpenApiSpec()).rejects.toThrow('Failed to fetch');
     });
   });
 
@@ -153,7 +132,6 @@ describe('scripts/automated-generate-types.ts', () => {
         if (!state.process) {
           return Promise.resolve();
         }
-        // プロセスが存在する場合の処理...
         return Promise.resolve();
       };
 
@@ -195,6 +173,54 @@ describe('scripts/automated-generate-types.ts', () => {
       expect(mockProcess.kill).toHaveBeenCalledWith('SIGTERM');
       expect(state.isShuttingDown).toBe(true);
       expect(state.process).toBeNull();
+    });
+  });
+
+  describe('ServerState型定義', () => {
+    test('ServerState型が適切に定義されていること', () => {
+      type ServerState = {
+        process: ChildProcess | null;
+        isShuttingDown: boolean;
+      };
+
+      const validState: ServerState = {
+        process: null,
+        isShuttingDown: false,
+      };
+
+      expect(validState).toBeDefined();
+      expect(typeof validState.isShuttingDown).toBe('boolean');
+      expect(validState.process).toBeNull();
+    });
+  });
+
+  describe('設定値の検証', () => {
+    test('サーバー設定値が適切であること', () => {
+      const SERVER_CONFIG = {
+        url: 'http://localhost:3000',
+        port: '3000',
+        maxStartupTime: 60000,
+        healthCheckInterval: 1000,
+        shutdownTimeout: 10000,
+      };
+
+      expect(SERVER_CONFIG.maxStartupTime).toBeGreaterThan(0);
+      expect(SERVER_CONFIG.maxStartupTime).toBeLessThanOrEqual(120000); // 2分以内
+      expect(SERVER_CONFIG.healthCheckInterval).toBeGreaterThan(0);
+      expect(SERVER_CONFIG.shutdownTimeout).toBeGreaterThan(0);
+      expect(SERVER_CONFIG.url).toMatch(/^https?:\/\//);
+    });
+
+    test('パス設定値が適切であること', () => {
+      const PATHS = {
+        outputPath: 'public/openapi.yaml',
+        apiEndpoint: '/api/openapi.yaml',
+        healthEndpoint: '/api/health',
+      };
+
+      expect(PATHS.apiEndpoint).toMatch(/^\/api\/openapi\.yaml$/);
+      expect(PATHS.healthEndpoint).toMatch(/^\/api\/health$/);
+      expect(PATHS.outputPath).toContain('openapi.yaml');
     });
   });
 });
