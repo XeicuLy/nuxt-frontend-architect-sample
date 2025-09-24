@@ -4,286 +4,296 @@ import { dirname, join } from 'node:path';
 import consola from 'consola';
 
 /**
- * 自動化された型生成スクリプト
- * 開発サーバーの起動から型生成、サーバー停止までを一括処理
+ * Automated Type Generation CLI
+ * Handles complete workflow: server start → OpenAPI fetch → server stop → type generation
  */
 
-/** サーバー設定 */
-const SERVER_CONFIG = {
-  url: process.env.SERVER_URL || 'http://localhost:3000',
-  port: process.env.PORT || '3000',
-  maxStartupTime: 60000, // 60秒
-  healthCheckInterval: 1000, // 1秒間隔
-  shutdownTimeout: 10000, // 10秒
+// =============================================================================
+// Configuration
+// =============================================================================
+
+const CONFIG = {
+  server: {
+    url: process.env.SERVER_URL || 'http://localhost:3000',
+    port: process.env.PORT || '3000',
+    maxStartupTime: 60_000, // 60 seconds
+    healthCheckInterval: 1_000, // 1 second
+    shutdownTimeout: 10_000, // 10 seconds
+  },
+  paths: {
+    outputPath: join(process.cwd(), 'public', 'openapi.yaml'),
+    apiEndpoint: '/api/openapi.yaml',
+    healthEndpoint: '/api/health',
+  },
+  timeouts: {
+    fetch: 10_000, // 10 seconds
+    healthCheck: 5_000, // 5 seconds
+  },
 } as const;
 
-/** ファイルパス設定 */
-const PATHS = {
-  outputPath: join(process.cwd(), 'public', 'openapi.yaml'),
-  apiEndpoint: '/api/openapi.yaml',
-  healthEndpoint: '/api/health',
-} as const;
+// =============================================================================
+// Types
+// =============================================================================
 
-/**
- * サーバープロセス状態の型定義
- */
-type ServerState = {
-  process: ChildProcess | null;
+interface ServerProcess {
+  child: ChildProcess | null;
   isShuttingDown: boolean;
-};
+}
 
-/**
- * サーバー状態を作成
- */
-const createServerState = (): ServerState => ({
-  process: null,
+// =============================================================================
+// Server Management
+// =============================================================================
+
+const createServerProcess = (): ServerProcess => ({
+  child: null,
   isShuttingDown: false,
 });
 
-/**
- * 開発サーバーを起動
- */
-const startServer = (state: ServerState): Promise<void> => {
-  consola.info('🚀 開発サーバーを起動中... (pnpm)');
+const startDevServer = async (server: ServerProcess): Promise<void> => {
+  consola.info('🚀 Starting development server...');
 
   return new Promise((resolve, reject) => {
-    // pnpm dev コマンドでサーバーを起動
-    state.process = spawn('pnpm', ['dev'], {
+    server.child = spawn('pnpm', ['dev'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       detached: false,
     });
 
-    if (!state.process) {
-      reject(new Error('サーバープロセスの起動に失敗しました'));
-      return;
+    if (!server.child) {
+      return reject(new Error('Failed to spawn server process'));
     }
 
-    // プロセス終了時の処理
-    state.process.on('exit', (code) => {
-      if (!state.isShuttingDown && code !== 0) {
-        reject(new Error(`サーバープロセスが異常終了しました (code: ${code})`));
+    // Handle process exit
+    server.child.on('exit', (code) => {
+      if (!server.isShuttingDown && code !== 0) {
+        reject(new Error(`Server process exited with code ${code}`));
       }
     });
 
-    // エラーハンドリング
-    state.process.on('error', (error) => {
-      reject(new Error(`サーバー起動エラー: ${error.message}`));
+    // Handle process errors
+    server.child.on('error', (error) => {
+      reject(new Error(`Server spawn error: ${error.message}`));
     });
 
-    // 標準出力の監視（起動完了の検知）
-    state.process.stdout?.on('data', (data) => {
+    // Monitor stdout for startup completion
+    server.child.stdout?.on('data', (data) => {
       const output = data.toString();
-      consola.debug('Server stdout:', output);
-
-      // Nuxtの起動完了メッセージを検知
-      if (output.includes('Local:') && output.includes(SERVER_CONFIG.port)) {
-        consola.success('✅ サーバーが起動しました');
+      
+      if (output.includes('Local:') && output.includes(CONFIG.server.port)) {
+        consola.success('✅ Development server started');
         resolve();
       }
     });
 
-    state.process.stderr?.on('data', (data) => {
+    // Monitor stderr for errors
+    server.child.stderr?.on('data', (data) => {
       const output = data.toString();
-      consola.debug('Server stderr:', output);
-
-      // エラーでない場合もstderrに出力される場合があるので、
-      // 特定のエラーパターンのみをチェック
+      
       if (output.includes('Error:') || output.includes('EADDRINUSE')) {
-        reject(new Error(`サーバーエラー: ${output}`));
+        reject(new Error(`Server error: ${output.trim()}`));
       }
     });
 
-    // タイムアウト処理
-    setTimeout(() => {
-      if (state.process && !state.process.killed) {
-        reject(new Error(`サーバー起動がタイムアウトしました (${SERVER_CONFIG.maxStartupTime}ms)`));
+    // Startup timeout
+    const timeout = setTimeout(() => {
+      if (server.child && !server.child.killed) {
+        reject(new Error(`Server startup timeout after ${CONFIG.server.maxStartupTime}ms`));
       }
-    }, SERVER_CONFIG.maxStartupTime);
+    }, CONFIG.server.maxStartupTime);
+
+    // Clear timeout on resolve/reject
+    const originalResolve = resolve;
+    const originalReject = reject;
+    resolve = (...args) => {
+      clearTimeout(timeout);
+      originalResolve(...args);
+    };
+    reject = (...args) => {
+      clearTimeout(timeout);
+      originalReject(...args);
+    };
   });
 };
 
-/**
- * サーバーの起動完了を待機
- */
 const waitForServerReady = async (): Promise<void> => {
-  consola.info('⏳ サーバーの起動完了を待機中...');
+  consola.info('⏳ Waiting for server to be ready...');
 
   const startTime = Date.now();
+  const maxWaitTime = CONFIG.server.maxStartupTime;
 
-  while (Date.now() - startTime < SERVER_CONFIG.maxStartupTime) {
-    try {
-      // ヘルスチェックエンドポイントで確認
-      const response = await fetch(`${SERVER_CONFIG.url}${PATHS.healthEndpoint}`, {
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (response.ok) {
-        consola.success('✅ サーバーが利用可能になりました');
-        return;
-      }
-    } catch {
-      // ヘルスチェックが失敗した場合は、OpenAPIエンドポイントで確認
-      try {
-        const response = await fetch(`${SERVER_CONFIG.url}${PATHS.apiEndpoint}`, {
-          signal: AbortSignal.timeout(5000),
-        });
-
-        if (response.ok) {
-          consola.success('✅ サーバーが利用可能になりました');
-          return;
-        }
-      } catch {
-        // 両方失敗した場合は次のループへ
-      }
-    }
-
-    // 次のチェックまで待機
-    await new Promise((resolve) => setTimeout(resolve, SERVER_CONFIG.healthCheckInterval));
-  }
-
-  throw new Error('サーバーの起動確認がタイムアウトしました');
-};
-
-/**
- * サーバーを停止
- */
-const stopServer = (state: ServerState): Promise<void> => {
-  if (!state.process) {
-    consola.info('停止するプロセスがありません');
-    return Promise.resolve();
-  }
-
-  consola.info('🛑 サーバーを停止中...');
-  state.isShuttingDown = true;
-
-  return new Promise((resolve) => {
-    if (!state.process) {
-      resolve();
+  while (Date.now() - startTime < maxWaitTime) {
+    // Try health check endpoint first
+    if (await checkEndpoint(CONFIG.paths.healthEndpoint)) {
+      consola.success('✅ Server is ready');
       return;
     }
 
-    // プロセス終了時の処理
-    state.process.once('exit', () => {
-      consola.success('✅ サーバーが停止しました');
-      state.process = null;
+    // Fallback to OpenAPI endpoint
+    if (await checkEndpoint(CONFIG.paths.apiEndpoint)) {
+      consola.success('✅ Server is ready');
+      return;
+    }
+
+    // Wait before next check
+    await sleep(CONFIG.server.healthCheckInterval);
+  }
+
+  throw new Error('Server readiness timeout');
+};
+
+const checkEndpoint = async (endpoint: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${CONFIG.server.url}${endpoint}`, {
+      signal: AbortSignal.timeout(CONFIG.timeouts.healthCheck),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
+
+const stopDevServer = async (server: ServerProcess): Promise<void> => {
+  if (!server.child) {
+    return;
+  }
+
+  consola.info('🛑 Stopping development server...');
+  server.isShuttingDown = true;
+
+  return new Promise((resolve) => {
+    if (!server.child) {
+      return resolve();
+    }
+
+    // Handle clean exit
+    server.child.once('exit', () => {
+      consola.success('✅ Development server stopped');
+      server.child = null;
       resolve();
     });
 
-    // Graceful shutdown を試行
-    state.process.kill('SIGTERM');
+    // Attempt graceful shutdown
+    server.child.kill('SIGTERM');
 
-    // タイムアウト後に強制終了
+    // Force kill after timeout
     setTimeout(() => {
-      if (state.process && !state.process.killed) {
-        consola.warn('⚠️  強制終了します');
-        state.process.kill('SIGKILL');
+      if (server.child && !server.child.killed) {
+        consola.warn('⚠️  Force killing server process');
+        server.child.kill('SIGKILL');
       }
-    }, SERVER_CONFIG.shutdownTimeout);
+    }, CONFIG.server.shutdownTimeout);
   });
 };
 
-/**
- * OpenAPIスペックを取得してファイルに保存
- */
-const fetchAndSaveOpenApiSpec = async (): Promise<void> => {
-  try {
-    consola.info(`📥 OpenAPIスペックを取得中: ${SERVER_CONFIG.url}${PATHS.apiEndpoint}`);
+// =============================================================================
+// OpenAPI Operations
+// =============================================================================
 
-    const response = await fetch(`${SERVER_CONFIG.url}${PATHS.apiEndpoint}`, {
-      headers: {
-        Accept: 'text/yaml, application/x-yaml',
-      },
-      signal: AbortSignal.timeout(10000),
+const fetchOpenApiSpec = async (): Promise<void> => {
+  consola.info('📥 Fetching OpenAPI specification...');
+
+  try {
+    const response = await fetch(`${CONFIG.server.url}${CONFIG.paths.apiEndpoint}`, {
+      headers: { Accept: 'text/yaml, application/x-yaml' },
+      signal: AbortSignal.timeout(CONFIG.timeouts.fetch),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAPIスペックの取得に失敗: ${response.status} ${response.statusText}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
     const spec = await response.text();
-
-    // ディレクトリの作成
-    mkdirSync(dirname(PATHS.outputPath), { recursive: true });
-
-    // ファイルに保存
-    writeFileSync(PATHS.outputPath, spec, 'utf-8');
-
-    consola.success(`💾 OpenAPIスペックを保存しました: ${PATHS.outputPath}`);
+    
+    // Ensure output directory exists
+    mkdirSync(dirname(CONFIG.paths.outputPath), { recursive: true });
+    
+    // Save specification
+    writeFileSync(CONFIG.paths.outputPath, spec, 'utf-8');
+    
+    consola.success(`💾 OpenAPI spec saved to ${CONFIG.paths.outputPath}`);
   } catch (error) {
-    consola.error('OpenAPIスペックの取得に失敗:', error);
+    consola.error('Failed to fetch OpenAPI spec:', error);
 
-    if (existsSync(PATHS.outputPath)) {
-      consola.warn('⚠️  既存のOpenAPIスペックファイルを使用します');
+    if (existsSync(CONFIG.paths.outputPath)) {
+      consola.warn('⚠️  Using existing OpenAPI spec file');
       return;
     }
 
-    throw new Error('OpenAPIスペックの取得に失敗し、既存ファイルも見つかりませんでした');
+    throw new Error('No OpenAPI spec available and fetch failed');
   }
 };
 
-/**
- * 型定義を生成
- */
-const generateTypes = async (): Promise<void> => {
-  consola.info('🔧 型定義を生成中...');
+// =============================================================================
+// Type Generation
+// =============================================================================
+
+const generateTypeDefinitions = async (): Promise<void> => {
+  consola.info('🔧 Generating type definitions...');
 
   return new Promise((resolve, reject) => {
-    const process = spawn('pnpm', ['run', 'generate-types:ci'], {
+    const child = spawn('pnpm', ['run', 'generate-types:ci'], {
       stdio: 'inherit',
     });
 
-    process.on('exit', (code) => {
+    child.on('exit', (code) => {
       if (code === 0) {
-        consola.success('✅ 型定義の生成が完了しました');
+        consola.success('✅ Type definitions generated successfully');
         resolve();
       } else {
-        reject(new Error(`型定義の生成に失敗しました (code: ${code})`));
+        reject(new Error(`Type generation failed with exit code ${code}`));
       }
     });
 
-    process.on('error', (error) => {
-      reject(new Error(`型定義生成エラー: ${error.message}`));
+    child.on('error', (error) => {
+      reject(new Error(`Type generation spawn error: ${error.message}`));
     });
   });
 };
 
-/**
- * メイン処理
- */
-const main = async (): Promise<void> => {
-  const serverState = createServerState();
+// =============================================================================
+// Utilities
+// =============================================================================
+
+const sleep = (ms: number): Promise<void> => 
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+// =============================================================================
+// Main CLI Logic
+// =============================================================================
+
+const runTypeGeneration = async (): Promise<void> => {
+  const server = createServerProcess();
   let serverStarted = false;
 
   try {
-    consola.start('🎯 自動化された型生成プロセスを開始します...');
+    consola.start('🎯 Starting automated type generation workflow...');
 
-    // 1. サーバー起動
-    await startServer(serverState);
+    // Step 1: Start development server
+    await startDevServer(server);
     serverStarted = true;
 
-    // 2. サーバーの準備完了を待機
+    // Step 2: Wait for server to be ready
     await waitForServerReady();
 
-    // 3. OpenAPIスペックの取得
-    await fetchAndSaveOpenApiSpec();
+    // Step 3: Fetch OpenAPI specification
+    await fetchOpenApiSpec();
 
-    // 4. サーバー停止
-    await stopServer(serverState);
+    // Step 4: Stop development server
+    await stopDevServer(server);
     serverStarted = false;
 
-    // 5. 型定義生成
-    await generateTypes();
+    // Step 5: Generate type definitions
+    await generateTypeDefinitions();
 
-    consola.success('🎉 すべての処理が正常に完了しました！');
+    consola.success('🎉 Type generation workflow completed successfully!');
   } catch (error) {
-    consola.error('❌ 処理中にエラーが発生しました:', error);
+    consola.error('❌ Workflow failed:', error);
 
-    // サーバーが起動している場合は停止
-    if (serverStarted) {
+    // Cleanup: stop server if it's running
+    if (serverStarted && server.child) {
       try {
-        await stopServer(serverState);
-      } catch (stopError) {
-        consola.error('サーバー停止時にエラーが発生:', stopError);
+        await stopDevServer(server);
+      } catch (cleanupError) {
+        consola.error('Failed to cleanup server:', cleanupError);
       }
     }
 
@@ -291,21 +301,32 @@ const main = async (): Promise<void> => {
   }
 };
 
-// スクリプト実行時の処理
-if (import.meta.url === `file://${process.argv[1]}`) {
-  // プロセス終了時のクリーンアップ
-  process.on('SIGINT', () => {
-    consola.info('プロセスが中断されました');
-    process.exit(0);
-  });
+// =============================================================================
+// CLI Entry Point
+// =============================================================================
 
-  process.on('SIGTERM', () => {
-    consola.info('プロセスが終了されました');
+const setupSignalHandlers = (): void => {
+  const handleExit = (signal: string) => {
+    consola.info(`Received ${signal}, exiting gracefully...`);
     process.exit(0);
-  });
+  };
 
-  main().catch((error) => {
-    consola.error('予期しないエラーが発生しました:', error);
+  process.on('SIGINT', () => handleExit('SIGINT'));
+  process.on('SIGTERM', () => handleExit('SIGTERM'));
+};
+
+const main = async (): Promise<void> => {
+  setupSignalHandlers();
+  
+  try {
+    await runTypeGeneration();
+  } catch (error) {
+    consola.error('Unexpected error:', error);
     process.exit(1);
-  });
+  }
+};
+
+// Run CLI if this file is executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
 }
