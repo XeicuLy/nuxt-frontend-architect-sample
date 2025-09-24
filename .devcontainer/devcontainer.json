@@ -1,0 +1,87 @@
+{
+  "name": "Nuxt 4 + Hono + TanStack Query フルスタック開発環境",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+
+  // Features to add to the dev container
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "nodeGitTagLockStep": false,
+      "version": "22.16.0"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "installDirectlyFromGitHubRelease": true,
+      "version": "latest"
+    }
+  },
+
+  // Configure tool-specific properties
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll": "explicit",
+          "source.biome": "explicit"
+        },
+        "[javascript][javascriptreact][typescript][typescriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "prettier.configPath": "prettier.config.mjs",
+        "files.associations": { "*.css": "tailwindcss" },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh",
+            "icon": "terminal"
+          }
+        }
+      },
+      "extensions": [
+        "biomejs.biome",
+        "ms-vscode-remote.remote-containers",
+        "ms-azuretools.vscode-docker",
+        "usernamehw.errorlens",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "Vue.volar"
+      ]
+    }
+  },
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally
+  "forwardPorts": [3000],
+
+  // Configure port attributes
+  "portsAttributes": {
+    "3000": {
+      "label": "Nuxt Application",
+      "onAutoForward": "notify"
+    }
+  },
+
+  // Use 'onCreateCommand' to run commands when creating the container
+  "onCreateCommand": "npm install -g pnpm@10.15.1",
+
+  // Use 'postCreateCommand' to run commands after the container is created
+  "postCreateCommand": ".devcontainer/setup.sh",
+
+  // Use 'postStartCommand' to run commands each time the container starts
+  "postStartCommand": "echo '🐳 DevContainer ready! Run pnpm dev to start development.'",
+
+  // Set environment variables
+  "remoteEnv": {
+    "NODE_ENV": "development",
+    "VOLTA_NODE_VERSION": "22.16.0",
+    "VOLTA_PNPM_VERSION": "10.15.1"
+  },
+
+  // Configure container options
+  "runArgs": ["--init"],
+
+  // Set the default user to vscode (non-root user)
+  "remoteUser": "node",
+
+  // Mount local timezone
+  "mounts": ["source=/etc/localtime,target=/etc/localtime,type=bind,readonly"]
+}

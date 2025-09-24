@@ -2,7 +2,36 @@
 
 このガイドでは、プロジェクトをセットアップして最初のページを表示するまでの手順を説明します。
 
-## 前提条件
+## 🐳 推奨: Dev Container でのセットアップ
+
+最も簡単で一貫性のある開発環境を構築できます：
+
+### 前提条件
+
+- **Docker Desktop** または **Docker Engine**
+- **Visual Studio Code**
+- **Dev Containers Extension** (`ms-vscode-remote.remote-containers`)
+
+### セットアップ手順
+
+```bash
+# 1. リポジトリをクローン
+git clone <repository-url>
+cd nuxt-frontend-architect-sample
+
+# 2. VS Code で開く
+code .
+
+# 3. Dev Container で再起動
+# 右下の通知「Reopen in Container」をクリック
+# または Cmd+Shift+P → "Dev Containers: Reopen in Container"
+```
+
+**詳細**: [📚 Dev Container 使用ガイド](./dev-container.md)
+
+## 💻 ローカル環境でのセットアップ
+
+### 前提条件
 
 以下の環境が必要です：
 
@@ -11,22 +40,22 @@
 
 > このプロジェクトでは[Volta](https://volta.sh/)で Node.js と pnpm のバージョン管理をしています。
 
-## インストール手順
+### インストール手順
 
-### 1. リポジトリをクローン
+#### 1. リポジトリをクローン
 
 ```bash
 git clone <repository-url>
 cd nuxt-frontend-architect-sample
 ```
 
-### 2. 依存関係をインストール
+#### 2. 依存関係をインストール
 
 ```bash
 pnpm install
 ```
 
-### 3. 開発サーバーを起動
+#### 3. 開発サーバーを起動
 
 ```bash
 pnpm dev
@@ -134,6 +163,7 @@ pnpm typecheck
 
 プロジェクトが正常に動作することが確認できたら、以下のドキュメントで詳細を学習してください：
 
+- 🐳 [Dev Container 使用ガイド](./dev-container.md) - 統一された開発環境
 - 🏗️ [アーキテクチャガイド](./architecture.md) - 設計思想と全体像
 - 📊 [ハイブリッド状態管理](./state-management.md) - TanStack Query + Pinia
 - 🔗 [API-First統合](./api-integration.md) - OpenAPI・型生成・エラーハンドリング
