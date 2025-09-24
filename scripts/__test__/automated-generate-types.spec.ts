@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { spawn } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 /**
  * 自動化された型生成スクリプトの関数テスト
@@ -19,7 +19,7 @@ describe('scripts/automated-generate-types.ts', () => {
       });
 
       const state = createServerState();
-      
+
       expect(state.process).toBeNull();
       expect(state.isShuttingDown).toBe(false);
     });
@@ -28,22 +28,22 @@ describe('scripts/automated-generate-types.ts', () => {
   describe('startServer', () => {
     test('pnpm devコマンドが正しい引数で呼び出されること', async () => {
       // spawnをモック
-      const mockProcess = new EventEmitter() as any;
+      const mockProcess = new EventEmitter() as ChildProcess;
       mockProcess.stdout = new EventEmitter();
       mockProcess.stderr = new EventEmitter();
       mockProcess.killed = false;
-      
-      const spawnSpy = vi.spyOn(require('node:child_process'), 'spawn').mockReturnValue(mockProcess);
 
-      const startServer = (state: any) => {
-        return new Promise((resolve) => {
+      const spawnSpy = vi.spyOn(await import('node:child_process'), 'spawn').mockReturnValue(mockProcess);
+
+      const startServer = (state: { process: ChildProcess | null; isShuttingDown: boolean }) => {
+        return new Promise<void>((resolve) => {
           state.process = spawn('pnpm', ['dev'], {
             stdio: ['pipe', 'pipe', 'pipe'],
             detached: false,
           });
-          
+
           // すぐに解決（実際のテストではstdoutイベントを待つ）
-          setTimeout(() => resolve(undefined), 10);
+          setTimeout(() => resolve(), 10);
         });
       };
 
@@ -68,7 +68,7 @@ describe('scripts/automated-generate-types.ts', () => {
         const response = await fetch('http://localhost:3000/api/health', {
           signal: AbortSignal.timeout(5000),
         });
-        
+
         if (response.ok) {
           return;
         }
@@ -92,7 +92,7 @@ describe('scripts/automated-generate-types.ts', () => {
 
       const mockWriteFileSync = vi.fn();
       const mockMkdirSync = vi.fn();
-      
+
       vi.doMock('node:fs', () => ({
         writeFileSync: mockWriteFileSync,
         mkdirSync: mockMkdirSync,
@@ -104,17 +104,17 @@ describe('scripts/automated-generate-types.ts', () => {
           headers: { Accept: 'text/yaml, application/x-yaml' },
           signal: AbortSignal.timeout(10000),
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch');
         }
-        
+
         const spec = await response.text();
         return spec;
       };
 
       const result = await fetchAndSaveOpenApiSpec();
-      
+
       expect(result).toContain('openapi: 3.0.0');
       expect(fetch).toHaveBeenCalledWith('http://localhost:3000/api/openapi.yaml', {
         headers: { Accept: 'text/yaml, application/x-yaml' },
@@ -125,17 +125,17 @@ describe('scripts/automated-generate-types.ts', () => {
 
   describe('generateTypes', () => {
     test('pnpm run generate-types:ciが正しく呼び出されること', async () => {
-      const mockProcess = new EventEmitter() as any;
-      const spawnSpy = vi.spyOn(require('node:child_process'), 'spawn').mockReturnValue(mockProcess);
+      const mockProcess = new EventEmitter() as ChildProcess;
+      const spawnSpy = vi.spyOn(await import('node:child_process'), 'spawn').mockReturnValue(mockProcess);
 
       const generateTypes = () => {
-        return new Promise((resolve) => {
-          const process = spawn('pnpm', ['run', 'generate-types:ci'], {
+        return new Promise<void>((resolve) => {
+          spawn('pnpm', ['run', 'generate-types:ci'], {
             stdio: 'inherit',
           });
-          
+
           // すぐに成功として解決
-          setTimeout(() => resolve(undefined), 10);
+          setTimeout(() => resolve(), 10);
         });
       };
 
@@ -149,11 +149,12 @@ describe('scripts/automated-generate-types.ts', () => {
 
   describe('stopServer', () => {
     test('プロセスが存在しない場合は何もしないこと', async () => {
-      const stopServer = (state: any) => {
+      const stopServer = (state: { process: ChildProcess | null; isShuttingDown: boolean }) => {
         if (!state.process) {
           return Promise.resolve();
         }
         // プロセスが存在する場合の処理...
+        return Promise.resolve();
       };
 
       const state = { process: null, isShuttingDown: false };
@@ -163,25 +164,25 @@ describe('scripts/automated-generate-types.ts', () => {
     test('プロセスが存在する場合はSIGTERMシグナルを送信すること', async () => {
       const mockProcess = {
         kill: vi.fn(),
-        once: vi.fn((event, callback) => {
+        once: vi.fn((event: string, callback: () => void) => {
           if (event === 'exit') {
             setTimeout(callback, 10);
           }
         }),
-      };
+      } as unknown as ChildProcess;
 
-      const stopServer = (state: any) => {
+      const stopServer = (state: { process: ChildProcess | null; isShuttingDown: boolean }) => {
         if (!state.process) {
           return Promise.resolve();
         }
-        
+
         state.isShuttingDown = true;
-        
-        return new Promise((resolve) => {
+
+        return new Promise<void>((resolve) => {
           if (state.process) {
             state.process.once('exit', () => {
               state.process = null;
-              resolve(undefined);
+              resolve();
             });
             state.process.kill('SIGTERM');
           }

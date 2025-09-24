@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from 'node:child_process';
+import { type ChildProcess, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import consola from 'consola';
@@ -74,7 +74,7 @@ const startServer = (state: ServerState): Promise<void> => {
     state.process.stdout?.on('data', (data) => {
       const output = data.toString();
       consola.debug('Server stdout:', output);
-      
+
       // Nuxtの起動完了メッセージを検知
       if (output.includes('Local:') && output.includes(SERVER_CONFIG.port)) {
         consola.success('✅ サーバーが起動しました');
@@ -85,7 +85,7 @@ const startServer = (state: ServerState): Promise<void> => {
     state.process.stderr?.on('data', (data) => {
       const output = data.toString();
       consola.debug('Server stderr:', output);
-      
+
       // エラーでない場合もstderrに出力される場合があるので、
       // 特定のエラーパターンのみをチェック
       if (output.includes('Error:') || output.includes('EADDRINUSE')) {
@@ -109,7 +109,7 @@ const waitForServerReady = async (): Promise<void> => {
   consola.info('⏳ サーバーの起動完了を待機中...');
 
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < SERVER_CONFIG.maxStartupTime) {
     try {
       // ヘルスチェックエンドポイントで確認
@@ -138,7 +138,7 @@ const waitForServerReady = async (): Promise<void> => {
     }
 
     // 次のチェックまで待機
-    await new Promise(resolve => setTimeout(resolve, SERVER_CONFIG.healthCheckInterval));
+    await new Promise((resolve) => setTimeout(resolve, SERVER_CONFIG.healthCheckInterval));
   }
 
   throw new Error('サーバーの起動確認がタイムアウトしました');
