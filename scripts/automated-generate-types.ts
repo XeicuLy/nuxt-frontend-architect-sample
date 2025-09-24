@@ -1,4 +1,4 @@
-import { type ChildProcess, spawn } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import consola from 'consola';
@@ -7,39 +7,6 @@ import consola from 'consola';
  * 自動化された型生成スクリプト
  * 開発サーバーの起動から型生成、サーバー停止までを一括処理
  */
-
-/**
- * 利用可能なパッケージマネージャーを検出
- */
-const detectPackageManager = (): string => {
-  // pnpm-lock.yaml が存在する場合はpnpmを優先
-  if (existsSync(join(process.cwd(), 'pnpm-lock.yaml'))) {
-    try {
-      // pnpmが利用可能かチェック
-      spawn('pnpm', ['--version'], { stdio: 'pipe' });
-      return 'pnpm';
-    } catch {
-      // pnpmが利用できない場合はnpmにフォールバック
-      consola.warn('⚠️  pnpmが見つかりません。npmを使用します。');
-    }
-  }
-
-  // package-lock.json が存在する場合はnpm
-  if (existsSync(join(process.cwd(), 'package-lock.json'))) {
-    return 'npm';
-  }
-
-  // yarn.lock が存在する場合はyarn
-  if (existsSync(join(process.cwd(), 'yarn.lock'))) {
-    return 'yarn';
-  }
-
-  // デフォルトはnpm
-  return 'npm';
-};
-
-/** パッケージマネージャー */
-const PACKAGE_MANAGER = detectPackageManager();
 
 /** サーバー設定 */
 const SERVER_CONFIG = {
@@ -77,14 +44,11 @@ const createServerState = (): ServerState => ({
  * 開発サーバーを起動
  */
 const startServer = (state: ServerState): Promise<void> => {
-  consola.info(`🚀 開発サーバーを起動中... (${PACKAGE_MANAGER})`);
+  consola.info('🚀 開発サーバーを起動中... (pnpm)');
 
   return new Promise((resolve, reject) => {
-    // dev コマンドでサーバーを起動
-    const devCommand = PACKAGE_MANAGER === 'npm' ? 'run' : '';
-    const args = devCommand ? [devCommand, 'dev'] : ['dev'];
-
-    state.process = spawn(PACKAGE_MANAGER, args, {
+    // pnpm dev コマンドでサーバーを起動
+    state.process = spawn('pnpm', ['dev'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       detached: false,
     });
@@ -110,7 +74,7 @@ const startServer = (state: ServerState): Promise<void> => {
     state.process.stdout?.on('data', (data) => {
       const output = data.toString();
       consola.debug('Server stdout:', output);
-
+      
       // Nuxtの起動完了メッセージを検知
       if (output.includes('Local:') && output.includes(SERVER_CONFIG.port)) {
         consola.success('✅ サーバーが起動しました');
@@ -121,7 +85,7 @@ const startServer = (state: ServerState): Promise<void> => {
     state.process.stderr?.on('data', (data) => {
       const output = data.toString();
       consola.debug('Server stderr:', output);
-
+      
       // エラーでない場合もstderrに出力される場合があるので、
       // 特定のエラーパターンのみをチェック
       if (output.includes('Error:') || output.includes('EADDRINUSE')) {
@@ -145,7 +109,7 @@ const waitForServerReady = async (): Promise<void> => {
   consola.info('⏳ サーバーの起動完了を待機中...');
 
   const startTime = Date.now();
-
+  
   while (Date.now() - startTime < SERVER_CONFIG.maxStartupTime) {
     try {
       // ヘルスチェックエンドポイントで確認
@@ -174,7 +138,7 @@ const waitForServerReady = async (): Promise<void> => {
     }
 
     // 次のチェックまで待機
-    await new Promise((resolve) => setTimeout(resolve, SERVER_CONFIG.healthCheckInterval));
+    await new Promise(resolve => setTimeout(resolve, SERVER_CONFIG.healthCheckInterval));
   }
 
   throw new Error('サーバーの起動確認がタイムアウトしました');
@@ -222,15 +186,6 @@ const stopServer = (state: ServerState): Promise<void> => {
  * OpenAPIスペックを取得してファイルに保存
  */
 const fetchAndSaveOpenApiSpec = async (): Promise<void> => {
-  const forceGenerate = process.argv.includes('--force');
-
-  // 既存ファイルのチェック
-  if (existsSync(PATHS.outputPath) && !forceGenerate) {
-    consola.info(`OpenAPIスペックは既に存在します: ${PATHS.outputPath}`);
-    consola.info('強制更新する場合は --force フラグを使用してください');
-    return;
-  }
-
   try {
     consola.info(`📥 OpenAPIスペックを取得中: ${SERVER_CONFIG.url}${PATHS.apiEndpoint}`);
 
@@ -273,10 +228,7 @@ const generateTypes = async (): Promise<void> => {
   consola.info('🔧 型定義を生成中...');
 
   return new Promise((resolve, reject) => {
-    const generateCommand = PACKAGE_MANAGER === 'npm' ? 'run' : 'run';
-    const args = [generateCommand, 'generate-types:ci'];
-
-    const process = spawn(PACKAGE_MANAGER, args, {
+    const process = spawn('pnpm', ['run', 'generate-types:ci'], {
       stdio: 'inherit',
     });
 

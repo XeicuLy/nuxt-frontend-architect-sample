@@ -14,9 +14,9 @@ pnpm preview          # Production preview
 ### API Type Generation
 
 ```bash
-pnpm generate-types       # 完全自動化: サーバー起動→スペック取得→型生成→サーバー停止
-pnpm generate-types:ci    # CI専用: 型生成のみ（OpenAPIファイル既存前提）
-pnpm generate-types:manual # 手動方式: 従来の2ステップ方式
+pnpm generate-types       # Fully automated: server start → spec fetch → type generation → server stop
+pnpm generate-types:ci    # CI only: type generation only (requires existing OpenAPI file)
+pnpm generate-types:manual # Manual approach: traditional 2-step method
 ```
 
 ### Access URLs

@@ -48,7 +48,7 @@ pnpm dev
 - **OpenAPI仕様**: http://localhost:3000/api/openapi.yaml
 - **型定義生成**: `pnpm generate-types` （完全自動化対応）
 
-## 🚀 型定義の自動生成（NEW!）
+## 🚀 型定義の自動生成
 
 このプロジェクトでは、型定義生成プロセスが**完全自動化**されています：
 
