@@ -29,48 +29,22 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode",
         "prettier.configPath": "prettier.config.mjs",
         "files.associations": { "*.css": "tailwindcss" },
-        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
-          "bash": {
-            "path": "/bin/bash",
-            "icon": "terminal-bash"
+          "zsh": {
+            "path": "/bin/zsh",
+            "icon": "terminal"
           }
         }
       },
       "extensions": [
-        // Core development tools
         "biomejs.biome",
+        "ms-vscode-remote.remote-containers",
+        "ms-azuretools.vscode-docker",
+        "usernamehw.errorlens",
+        "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "ms-vscode.vscode-eslint",
-        "bradlc.vscode-tailwindcss",
-
-        // Vue.js ecosystem
-        "Vue.volar",
-        "Vue.vscode-typescript-vue-plugin",
-
-        // TypeScript & JavaScript
-        "ms-vscode.vscode-typescript-next",
-
-        // Testing
-        "vitest.explorer",
-
-        // API & OpenAPI
-        "42crunch.vscode-openapi",
-        "humao.rest-client",
-
-        // Git & GitHub
-        "GitHub.vscode-pull-request-github",
-        "GitHub.copilot",
-        "GitHub.copilot-chat",
-
-        // Utility extensions
-        "ms-vscode.vscode-json",
-        "redhat.vscode-yaml",
-        "ms-vscode.vscode-markdown",
-        "yzhang.markdown-all-in-one",
-
-        // Docker (for understanding container environment)
-        "ms-azuretools.vscode-docker"
+        "Vue.volar"
       ]
     }
   },
