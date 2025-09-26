@@ -284,6 +284,12 @@ const runTypeGeneration = async (): Promise<void> => {
     await generateTypeDefinitions();
 
     consola.success('🎉 Type generation workflow completed successfully!');
+    
+    // Force cleanup any remaining handles
+    if (server.child) {
+      server.child.removeAllListeners();
+    }
+    
   } catch (error) {
     consola.error('❌ Workflow failed:', error);
 
@@ -319,6 +325,14 @@ const main = async (): Promise<void> => {
 
   try {
     await runTypeGeneration();
+    // Explicitly exit after successful completion
+    consola.info('🔄 Finishing up...');
+    
+    // Add a small delay and force exit to prevent hanging
+    setTimeout(() => {
+      process.exit(0);
+    }, 100);
+    
   } catch (error) {
     consola.error('Unexpected error:', error);
     process.exit(1);
@@ -327,5 +341,11 @@ const main = async (): Promise<void> => {
 
 // Run CLI if this file is executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+  main().then(() => {
+    // Ensure process exits even if there are lingering timers
+    process.exit(0);
+  }).catch((error) => {
+    consola.error('CLI execution failed:', error);
+    process.exit(1);
+  });
 }
