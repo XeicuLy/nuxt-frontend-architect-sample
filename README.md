@@ -46,7 +46,31 @@ pnpm dev
 - **アプリ**: http://localhost:3000
 - **API ドキュメント**: http://localhost:3000/api/swagger
 - **OpenAPI仕様**: http://localhost:3000/api/openapi.yaml
-- **型定義生成**: `pnpm generate-types` （開発サーバー起動後）
+- **型定義生成**: `pnpm generate-types` （完全自動化対応）
+
+## 🚀 型定義の自動生成
+
+このプロジェクトでは、型定義生成プロセスが**完全自動化**されています：
+
+```bash
+# 1コマンドで全て完了
+pnpm generate-types
+```
+
+**🔄 自動化されたワークフロー**:
+
+1. 開発サーバーを自動起動
+2. サーバー準備完了を検知
+3. OpenAPIスペックを取得
+4. サーバーを自動停止
+5. TypeScript型定義を生成
+6. コードを自動整形
+
+**📋 利用可能なコマンド**:
+
+- `pnpm generate-types` - 完全自動化（推奨）
+- `pnpm generate-types:manual` - 従来の手動方式
+- `pnpm generate-types:ci` - CI専用（既存ファイル前提）
 
 ## 📚 学習パス
 

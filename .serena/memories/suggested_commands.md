@@ -14,8 +14,9 @@ pnpm preview          # Production preview
 ### API Type Generation
 
 ```bash
-pnpm generate-types   # OpenAPI spec generation → type generation → lint fixes (full execution)
-pnpm generate-types:ci # Type generation only (for CI)
+pnpm generate-types       # Fully automated: server start → spec fetch → type generation → server stop
+pnpm generate-types:ci    # CI only: type generation only (requires existing OpenAPI file)
+pnpm generate-types:manual # Manual approach: traditional 2-step method
 ```
 
 ### Access URLs

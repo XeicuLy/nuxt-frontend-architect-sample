@@ -26,7 +26,8 @@
     "test:ui": "vitest --ui --coverage",
     "test:coverage": "vitest run --coverage",
     "generate-openapi-spec": "jiti scripts/generate-openapi-spec.ts",
-    "generate-types": "pnpm generate-openapi-spec && openapi-ts && pnpm lint:fix",
+    "generate-types": "jiti scripts/automated-generate-types.ts",
+    "generate-types:manual": "pnpm generate-openapi-spec && openapi-ts && pnpm lint:fix",
     "generate-types:ci": "openapi-ts && pnpm lint:fix",
     "sync-versions": "jiti scripts/sync-node-version.ts",
     "prepare": "jiti .husky/install.mts"
