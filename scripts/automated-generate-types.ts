@@ -77,7 +77,7 @@ const startDevServer = async (server: ServerProcess): Promise<void> => {
     // Monitor stdout for startup completion
     server.child.stdout?.on('data', (data) => {
       const output = data.toString();
-      
+
       if (output.includes('Local:') && output.includes(CONFIG.server.port)) {
         consola.success('✅ Development server started');
         resolve();
@@ -87,7 +87,7 @@ const startDevServer = async (server: ServerProcess): Promise<void> => {
     // Monitor stderr for errors
     server.child.stderr?.on('data', (data) => {
       const output = data.toString();
-      
+
       if (output.includes('Error:') || output.includes('EADDRINUSE')) {
         reject(new Error(`Server error: ${output.trim()}`));
       }
@@ -202,13 +202,13 @@ const fetchOpenApiSpec = async (): Promise<void> => {
     }
 
     const spec = await response.text();
-    
+
     // Ensure output directory exists
     mkdirSync(dirname(CONFIG.paths.outputPath), { recursive: true });
-    
+
     // Save specification
     writeFileSync(CONFIG.paths.outputPath, spec, 'utf-8');
-    
+
     consola.success(`💾 OpenAPI spec saved to ${CONFIG.paths.outputPath}`);
   } catch (error) {
     consola.error('Failed to fetch OpenAPI spec:', error);
@@ -253,8 +253,7 @@ const generateTypeDefinitions = async (): Promise<void> => {
 // Utilities
 // =============================================================================
 
-const sleep = (ms: number): Promise<void> => 
-  new Promise((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 // =============================================================================
 // Main CLI Logic
@@ -317,7 +316,7 @@ const setupSignalHandlers = (): void => {
 
 const main = async (): Promise<void> => {
   setupSignalHandlers();
-  
+
   try {
     await runTypeGeneration();
   } catch (error) {
